@@ -1,0 +1,103 @@
+import { create } from 'zustand'
+import { persist } from 'zustand/middleware'
+import type { User, LoginCredentials } from '@/types'
+import { authService } from '@/services/authService'
+
+interface AuthState {
+  user: User | null
+  isAuthenticated: boolean
+  loading: boolean
+  error: string | null
+  
+  // Actions
+  login: (credentials: LoginCredentials) => Promise<void>
+  logout: () => void
+  clearError: () => void
+  refreshUser: () => Promise<void>
+  setUser: (user: User | null) => void
+}
+
+export const useAuthStore = create<AuthState>()(
+  persist(
+    (set, get) => ({
+      user: null,
+      isAuthenticated: false,
+      loading: false,
+      error: null,
+
+      login: async (credentials: LoginCredentials) => {
+        set({ loading: true, error: null })
+        try {
+          const response = await authService.login(credentials)
+          const { user, token } = response.data
+          
+          // 存储token到localStorage
+          localStorage.setItem('auth_token', token)
+          
+          set({ 
+            user, 
+            isAuthenticated: true, 
+            loading: false,
+            error: null 
+          })
+        } catch (error: any) {
+          set({ 
+            loading: false, 
+            error: error.response?.data?.message || '登录失败' 
+          })
+          throw error
+        }
+      },
+
+      logout: () => {
+        localStorage.removeItem('auth_token')
+        set({ 
+          user: null, 
+          isAuthenticated: false, 
+          error: null 
+        })
+      },
+
+      clearError: () => {
+        set({ error: null })
+      },
+
+      refreshUser: async () => {
+        const token = localStorage.getItem('auth_token')
+        if (!token) {
+          set({ user: null, isAuthenticated: false })
+          return
+        }
+
+        try {
+          const response = await authService.getCurrentUser()
+          set({ 
+            user: response.data, 
+            isAuthenticated: true 
+          })
+        } catch (error) {
+          // Token无效，清除认证状态
+          localStorage.removeItem('auth_token')
+          set({ 
+            user: null, 
+            isAuthenticated: false 
+          })
+        }
+      },
+
+      setUser: (user: User | null) => {
+        set({ 
+          user, 
+          isAuthenticated: !!user 
+        })
+      },
+    }),
+    {
+      name: 'auth-storage',
+      partialize: (state) => ({ 
+        user: state.user, 
+        isAuthenticated: state.isAuthenticated 
+      }),
+    }
+  )
+)
