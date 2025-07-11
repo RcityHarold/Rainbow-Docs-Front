@@ -87,6 +87,48 @@ Rainbow-Docs-Front/
 - Node.js >= 16.0.0
 - npm >= 8.0.0 或 yarn >= 1.22.0
 
+## 🎯 运行模式说明
+
+Rainbow Docs Frontend 支持与后端的智能集成，可以自动检测系统安装状态并显示相应界面。
+
+### 🔄 安装状态检测机制
+
+前端通过 API 请求自动检测系统状态：
+
+```javascript
+// 自动检测安装状态
+const response = await fetch('/api/install/status')
+const data = await response.json()
+
+if (!data.data.is_installed) {
+  // 🔧 显示安装向导界面 (InstallWizard)
+  return <InstallWizard />
+} else {
+  // 📚 显示正常文档管理界面
+  return <NormalApp />
+}
+```
+
+### 📋 前后端协作说明
+
+#### API 请求路由
+- **前端访问**: `/api/install/status`
+- **代理转发**: `http://localhost:3000/api/install/status`
+- **后端检查**: `.rainbow_docs_installed` 文件状态
+
+#### Vite 代理配置
+```typescript
+// vite.config.ts
+server: {
+  proxy: {
+    '/api': {
+      target: 'http://localhost:3000',  // 后端地址
+      changeOrigin: true,
+    },
+  },
+}
+```
+
 ### 安装依赖
 
 ```bash
@@ -99,6 +141,20 @@ yarn install
 
 ### 启动开发服务器
 
+#### 方式一：配合后端安装向导测试
+```bash
+# 1. 启动后端（安装模式）
+cd ../Rainbow-Docs
+cargo run --features installer
+
+# 2. 启动前端（新终端）
+npm run dev
+
+# 3. 浏览器访问 http://localhost:5173
+# 4. 前端自动检测并显示安装向导
+```
+
+#### 方式二：独立前端开发
 ```bash
 # 启动开发服务器
 npm run dev
@@ -107,7 +163,9 @@ npm run dev
 yarn dev
 ```
 
-访问 http://localhost:3000 查看应用
+访问 http://localhost:5173 查看应用
+
+**注意**: Vite 默认端口是 5173，如果需要修改可在 `vite.config.ts` 中配置。
 
 ### 构建生产版本
 
@@ -117,6 +175,21 @@ npm run build
 
 # 预览生产版本
 npm run preview
+```
+
+### 🛠️ 构建脚本使用
+
+项目提供了便捷的构建脚本：
+
+```bash
+# 构建安装版本前端
+./build.sh installer
+
+# 构建生产版本前端
+./build.sh production
+
+# 启动开发服务器
+./build.sh dev
 ```
 
 ## ⚙️ 配置说明
@@ -160,6 +233,28 @@ export default defineConfig({
 ```
 
 ## 📖 主要功能模块
+
+### 0. 🎯 安装向导系统
+- ✅ **智能检测**: 自动检测系统安装状态
+- ✅ **Web界面安装**: 类似 WordPress/Discuz 的安装体验
+- ✅ **步骤式引导**: 5步完整安装流程
+- ✅ **条件渲染**: 根据安装状态动态显示界面
+- ✅ **配置验证**: 实时验证用户输入
+- ✅ **错误处理**: 友好的错误提示和处理
+
+#### 安装向导流程
+1. **🔍 环境检查** - 检查系统环境和依赖
+2. **🗄️ 数据库配置** - 配置 SurrealDB 连接
+3. **👤 管理员账户** - 创建系统管理员账户  
+4. **⚙️ 站点配置** - 配置站点基本信息
+5. **✅ 完成安装** - 保存配置并初始化系统
+
+#### 界面特性
+- **响应式设计**: 适配桌面和移动端
+- **进度指示器**: 清晰的步骤进度显示
+- **表单验证**: 实时输入验证和错误提示
+- **自动填充**: 智能的默认值和生成功能
+- **一键重试**: 安装失败后的重试机制
 
 ### 1. 用户认证
 - ✅ 登录/注册

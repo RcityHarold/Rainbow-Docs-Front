@@ -17,6 +17,9 @@ import SearchPage from '@/pages/SearchPage'
 import ProfilePage from '@/pages/profile/ProfilePage'
 import NotFoundPage from '@/pages/NotFoundPage'
 
+// 安装向导
+import InstallerApp from './InstallerApp'
+
 // 路由守卫组件
 const ProtectedRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const { isAuthenticated, user } = useAuthStore()
@@ -41,22 +44,37 @@ const PublicRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
 const App: React.FC = () => {
   const { refreshUser, isAuthenticated } = useAuthStore()
   const [loading, setLoading] = React.useState(true)
+  const [needsInstallation, setNeedsInstallation] = React.useState(false)
 
   useEffect(() => {
-    const initAuth = async () => {
+    const initApp = async () => {
       try {
+        // 首先检查是否需要安装
+        const response = await fetch('/api/install/status')
+        if (response.ok) {
+          const data = await response.json()
+          if (data.status === 'success' && data.data && !data.data.is_installed) {
+            setNeedsInstallation(true)
+            setLoading(false)
+            return
+          }
+        }
+
+        // 如果不需要安装，继续正常的认证初始化
         const token = localStorage.getItem('auth_token')
         if (token) {
           await refreshUser()
         }
       } catch (error) {
-        console.error('初始化认证失败:', error)
+        console.error('初始化失败:', error)
+        // 如果检查安装状态失败，假设需要安装
+        setNeedsInstallation(true)
       } finally {
         setLoading(false)
       }
     }
 
-    initAuth()
+    initApp()
   }, [refreshUser])
 
   if (loading) {
@@ -65,6 +83,11 @@ const App: React.FC = () => {
         <Spin size="large" tip="正在加载..." />
       </div>
     )
+  }
+
+  // 如果需要安装，显示安装向导
+  if (needsInstallation) {
+    return <InstallerApp />
   }
 
   return (
