@@ -77,7 +77,7 @@ api.interceptors.response.use(
           break
           
         default:
-          message.error(data?.message || '网络错误，请稍后重试')
+          message.error(data?.message || data?.error || '网络错误，请稍后重试')
       }
     } else if (error.request) {
       // 网络错误

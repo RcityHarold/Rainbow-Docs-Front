@@ -59,8 +59,8 @@ export const authService = {
   },
 
   // 验证邮箱
-  verifyEmail: (token: string): Promise<ApiResponse<null>> =>
-    request.post('/auth/verify-email', { token }),
+  verifyEmail: (token: string): Promise<ApiResponse<{ user: User; token: string }>> =>
+    request.get(`/auth/verify-email/${token}`),
 
   // 发送邮箱验证码
   sendEmailVerification: (): Promise<ApiResponse<null>> =>

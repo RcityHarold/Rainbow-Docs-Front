@@ -14,7 +14,7 @@ const LoginPage: React.FC = () => {
     try {
       clearError()
       await login({
-        username: values.username,
+        email: values.email,
         password: values.password,
       })
       
@@ -53,15 +53,16 @@ const LoginPage: React.FC = () => {
         size="large"
       >
         <Form.Item
-          label="用户名或邮箱"
-          name="username"
+          label="邮箱"
+          name="email"
           rules={[
-            { required: true, message: '请输入用户名或邮箱!' },
+            { required: true, message: '请输入邮箱!' },
+            { type: 'email', message: '请输入正确的邮箱格式!' },
           ]}
         >
           <Input 
             prefix={<UserOutlined className="text-gray-400" />} 
-            placeholder="用户名或邮箱"
+            placeholder="邮箱"
           />
         </Form.Item>
 

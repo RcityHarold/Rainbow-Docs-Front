@@ -1,6 +1,6 @@
 import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
-import type { User, LoginCredentials } from '@/types'
+import type { User, LoginCredentials, RegisterData } from '@/types'
 import { authService } from '@/services/authService'
 
 interface AuthState {
@@ -11,6 +11,7 @@ interface AuthState {
   
   // Actions
   login: (credentials: LoginCredentials) => Promise<void>
+  register: (data: RegisterData) => Promise<void>
   logout: () => void
   clearError: () => void
   refreshUser: () => Promise<void>
@@ -29,7 +30,7 @@ export const useAuthStore = create<AuthState>()(
         set({ loading: true, error: null })
         try {
           const response = await authService.login(credentials)
-          const { user, token } = response.data
+          const { user, token } = response.data || response
           
           // 存储token到localStorage
           localStorage.setItem('auth_token', token)
@@ -43,7 +44,21 @@ export const useAuthStore = create<AuthState>()(
         } catch (error: any) {
           set({ 
             loading: false, 
-            error: error.response?.data?.message || '登录失败' 
+            error: error.response?.data?.message || error.response?.data?.error || '登录失败' 
+          })
+          throw error
+        }
+      },
+
+      register: async (data: RegisterData) => {
+        set({ loading: true, error: null })
+        try {
+          await authService.register(data)
+          set({ loading: false, error: null })
+        } catch (error: any) {
+          set({ 
+            loading: false, 
+            error: error.response?.data?.message || error.response?.data?.error || '注册失败' 
           })
           throw error
         }

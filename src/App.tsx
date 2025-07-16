@@ -9,6 +9,8 @@ import AuthLayout from '@/components/layout/AuthLayout'
 
 // 页面组件
 import LoginPage from '@/pages/auth/LoginPage'
+import RegisterPage from '@/pages/auth/RegisterPage'
+import EmailVerificationPage from '@/pages/auth/EmailVerificationPage'
 import DashboardPage from '@/pages/DashboardPage'
 import SpaceDetailPage from '@/pages/space/SpaceDetailPage'
 import DocumentViewPage from '@/pages/document/DocumentViewPage'
@@ -102,6 +104,26 @@ const App: React.FC = () => {
                 <LoginPage />
               </AuthLayout>
             </PublicRoute>
+          }
+        />
+        
+        <Route
+          path="/register"
+          element={
+            <PublicRoute>
+              <AuthLayout>
+                <RegisterPage />
+              </AuthLayout>
+            </PublicRoute>
+          }
+        />
+        
+        <Route
+          path="/verify-email/:token"
+          element={
+            <AuthLayout>
+              <EmailVerificationPage />
+            </AuthLayout>
           }
         />
 

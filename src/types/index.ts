@@ -1,24 +1,22 @@
 // 用户相关类型
 export interface User {
   id: string
-  username: string
   email: string
-  display_name?: string
-  avatar_url?: string
+  is_email_verified: boolean
   created_at: string
-  updated_at: string
+  has_password: boolean
+  account_status: 'Active' | 'Inactive' | 'Suspended' | 'PendingDeletion' | 'Deleted'
+  last_login_at?: string
 }
 
 export interface LoginCredentials {
-  username: string
+  email: string
   password: string
 }
 
 export interface RegisterData {
-  username: string
   email: string
   password: string
-  display_name?: string
 }
 
 // 空间相关类型
