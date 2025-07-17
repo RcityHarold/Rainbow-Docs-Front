@@ -11,6 +11,8 @@ import AuthLayout from '@/components/layout/AuthLayout'
 import LoginPage from '@/pages/auth/LoginPage'
 import RegisterPage from '@/pages/auth/RegisterPage'
 import EmailVerificationPage from '@/pages/auth/EmailVerificationPage'
+import OAuthCallbackPage from '@/pages/auth/OAuthCallbackPage'
+import InitializePasswordPage from '@/pages/auth/InitializePasswordPage'
 import DashboardPage from '@/pages/DashboardPage'
 import SpaceDetailPage from '@/pages/space/SpaceDetailPage'
 import DocumentViewPage from '@/pages/document/DocumentViewPage'
@@ -125,6 +127,16 @@ const App: React.FC = () => {
               <EmailVerificationPage />
             </AuthLayout>
           }
+        />
+        
+        <Route
+          path="/oauth/callback"
+          element={<OAuthCallbackPage />}
+        />
+        
+        <Route
+          path="/initialize-password"
+          element={<InitializePasswordPage />}
         />
 
         {/* 受保护的路由 */}

@@ -26,6 +26,11 @@ const LoginPage: React.FC = () => {
     }
   }
 
+  const handleGoogleLogin = () => {
+    // 重定向到通过 Kong 网关的 Google OAuth 登录端点
+    window.location.href = '/api/auth/login/google'
+  }
+
   return (
     <div>
       <div className="text-center mb-6">
@@ -119,6 +124,7 @@ const LoginPage: React.FC = () => {
         
         <Button 
           icon={<GoogleOutlined />} 
+          onClick={handleGoogleLogin}
           className="w-full h-12 border-gray-300 text-gray-700 hover:border-gray-400"
         >
           使用 Google 登录

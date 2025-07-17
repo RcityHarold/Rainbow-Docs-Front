@@ -16,6 +16,7 @@ interface AuthState {
   clearError: () => void
   refreshUser: () => Promise<void>
   setUser: (user: User | null) => void
+  setAuth: (user: User, token: string) => void
 }
 
 export const useAuthStore = create<AuthState>()(
@@ -104,6 +105,17 @@ export const useAuthStore = create<AuthState>()(
         set({ 
           user, 
           isAuthenticated: !!user 
+        })
+      },
+
+      setAuth: (user: User, token: string) => {
+        // 存储token到localStorage
+        localStorage.setItem('auth_token', token)
+        
+        set({ 
+          user, 
+          isAuthenticated: true,
+          error: null 
         })
       },
     }),
