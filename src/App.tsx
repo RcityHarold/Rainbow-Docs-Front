@@ -15,8 +15,10 @@ import OAuthCallbackPage from '@/pages/auth/OAuthCallbackPage'
 import InitializePasswordPage from '@/pages/auth/InitializePasswordPage'
 import DashboardPage from '@/pages/DashboardPage'
 import SpaceDetailPage from '@/pages/space/SpaceDetailPage'
+import SpaceListPage from '@/pages/space/SpaceListPage'
 import DocumentViewPage from '@/pages/document/DocumentViewPage'
 import DocumentEditPage from '@/pages/document/DocumentEditPage'
+import DocumentCreatePage from '@/pages/document/DocumentCreatePage'
 import SearchPage from '@/pages/SearchPage'
 import ProfilePage from '@/pages/profile/ProfilePage'
 import NotFoundPage from '@/pages/NotFoundPage'
@@ -148,7 +150,9 @@ const App: React.FC = () => {
                 <Routes>
                   <Route path="/" element={<Navigate to="/dashboard" replace />} />
                   <Route path="/dashboard" element={<DashboardPage />} />
+                  <Route path="/spaces" element={<SpaceListPage />} />
                   <Route path="/spaces/:spaceSlug" element={<SpaceDetailPage />} />
+                  <Route path="/spaces/:spaceSlug/docs/new" element={<DocumentCreatePage />} />
                   <Route path="/spaces/:spaceSlug/docs/:docSlug" element={<DocumentViewPage />} />
                   <Route path="/spaces/:spaceSlug/docs/:docSlug/edit" element={<DocumentEditPage />} />
                   <Route path="/search" element={<SearchPage />} />

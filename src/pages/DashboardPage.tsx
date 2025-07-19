@@ -126,18 +126,30 @@ const DashboardPage: React.FC = () => {
   ])
 
   useEffect(() => {
-    // 模拟加载数据
     const loadDashboardData = async () => {
       try {
-        // 这里应该调用真实的API
+        // 加载用户的空间列表
+        const spacesResponse = await fetch('/api/spaces?limit=10')
+        const spacesData = await spacesResponse.json()
+        
+        // 计算统计数据
+        const totalSpaces = spacesData.data?.items?.length || 0
+        
         setStats({
-          totalSpaces: 12,
-          totalDocuments: 156,
-          totalViews: 2543,
-          totalMembers: 28,
+          totalSpaces,
+          totalDocuments: 0, // 需要从各个空间聚合
+          totalViews: 0,
+          totalMembers: 0,
         })
       } catch (error) {
         console.error('加载仪表板数据失败:', error)
+        // 使用模拟数据作为回退
+        setStats({
+          totalSpaces: 0,
+          totalDocuments: 0,
+          totalViews: 0,
+          totalMembers: 0,
+        })
       } finally {
         setLoading(false)
       }
@@ -297,9 +309,9 @@ const DashboardPage: React.FC = () => {
               <Button 
                 type="primary" 
                 icon={<PlusOutlined />}
-                onClick={() => navigate('/spaces/create')}
+                onClick={() => navigate('/spaces')}
               >
-                创建空间
+                管理空间
               </Button>
             }
             className="h-full"
@@ -365,10 +377,10 @@ const DashboardPage: React.FC = () => {
             <Button 
               type="dashed" 
               className="w-full h-24 flex flex-col items-center justify-center"
-              onClick={() => navigate('/spaces/create')}
+              onClick={() => navigate('/spaces')}
             >
               <PlusOutlined className="text-2xl mb-2" />
-              <span>创建空间</span>
+              <span>管理空间</span>
             </Button>
           </Col>
           <Col xs={24} sm={12} md={8} lg={6}>

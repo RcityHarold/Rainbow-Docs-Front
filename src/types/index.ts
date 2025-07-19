@@ -235,6 +235,15 @@ export interface PaginatedResponse<T> {
   total_pages: number
 }
 
+// 空间列表响应（后端返回的格式）
+export interface SpaceListResponse {
+  spaces: Space[]
+  total: number
+  page: number
+  limit: number
+  total_pages: number
+}
+
 // 通用类型
 export interface SelectOption {
   label: string

@@ -1,0 +1,285 @@
+import React, { useState, useCallback, useEffect } from 'react'
+import { useParams, useNavigate } from 'react-router-dom'
+import {
+  Layout,
+  Typography,
+  Button,
+  Breadcrumb,
+  Card,
+  Input,
+  Switch,
+  message,
+  Space,
+  Tabs
+} from 'antd'
+import {
+  SaveOutlined,
+  HomeOutlined,
+  FolderOpenOutlined,
+  FileTextOutlined,
+  ArrowLeftOutlined,
+  EditOutlined,
+  EyeOutlined,
+  SplitCellsOutlined
+} from '@ant-design/icons'
+import { useDocStore } from '@/stores/docStore'
+import { useSpaceStore } from '@/stores/spaceStore'
+import type { RouteParams, CreateDocumentRequest } from '@/types'
+import MDEditor from '@uiw/react-md-editor'
+import '@uiw/react-md-editor/markdown-editor.css'
+import '@uiw/react-markdown-preview/markdown.css'
+
+const { Content } = Layout
+const { Title, Text } = Typography
+
+interface DocumentCreateParams extends RouteParams {
+  spaceSlug: string
+}
+
+const DocumentCreatePage: React.FC = () => {
+  const { spaceSlug } = useParams<DocumentCreateParams>()
+  const navigate = useNavigate()
+  const { createDocument, loading } = useDocStore()
+  const { currentSpace, loadSpace } = useSpaceStore()
+  
+  const [content, setContent] = useState(`# 新文档
+
+欢迎使用Markdown编辑器！
+
+## 功能特性
+
+- ✅ **实时预览**：支持编辑和预览同时显示
+- ✅ **语法高亮**：代码块自动高亮显示
+- ✅ **工具栏**：丰富的编辑工具
+- ✅ **粘贴支持**：可以直接粘贴Markdown格式内容
+
+## 示例内容
+
+### 代码块
+\`\`\`javascript
+function hello() {
+  console.log("Hello, World!");
+}
+\`\`\`
+
+### 表格
+| 列1 | 列2 | 列3 |
+|-----|-----|-----|
+| 数据1 | 数据2 | 数据3 |
+
+### 列表
+1. 有序列表项1
+2. 有序列表项2
+   - 嵌套项目
+   - 另一个嵌套项目
+
+> 这是一个引用块，可以用来突出重要信息。
+
+**开始编写您的文档内容吧！**`)
+  const [title, setTitle] = useState('')
+  const [activeTab, setActiveTab] = useState('split')
+  const [isPublic, setIsPublic] = useState(false)
+  const [saving, setSaving] = useState(false)
+
+  useEffect(() => {
+    if (spaceSlug && (!currentSpace || currentSpace.slug !== spaceSlug)) {
+      loadSpace(spaceSlug)
+    }
+  }, [spaceSlug, currentSpace, loadSpace])
+
+
+  const handleSave = useCallback(async () => {
+    if (!spaceSlug || !title.trim()) {
+      message.error('请填写文档标题')
+      return
+    }
+
+    // 生成slug
+    const slug = title
+      .toLowerCase()
+      .replace(/[^a-z0-9\s-]/g, '')
+      .replace(/\s+/g, '-')
+      .replace(/-+/g, '-')
+      .trim()
+
+    if (!slug) {
+      message.error('无效的文档标题')
+      return
+    }
+
+    setSaving(true)
+    try {
+      const documentData: CreateDocumentRequest = {
+        title: title.trim(),
+        slug,
+        content,
+        is_published: isPublic,
+        parent_id: null
+      }
+
+      await createDocument(spaceSlug, documentData)
+      message.success('文档创建成功')
+      navigate(`/spaces/${spaceSlug}/docs/${slug}`)
+    } catch (error) {
+      message.error('创建文档失败')
+      console.error('Create document error:', error)
+    } finally {
+      setSaving(false)
+    }
+  }, [spaceSlug, title, content, isPublic, createDocument, navigate])
+
+  const handleBack = () => {
+    navigate(`/spaces/${spaceSlug}`)
+  }
+
+  return (
+    <Layout className="min-h-screen bg-white">
+      <Content className="p-6">
+        {/* 面包屑导航 */}
+        <Breadcrumb className="mb-6">
+          <Breadcrumb.Item>
+            <HomeOutlined />
+            <span 
+              className="cursor-pointer ml-1"
+              onClick={() => navigate('/dashboard')}
+            >
+              首页
+            </span>
+          </Breadcrumb.Item>
+          <Breadcrumb.Item>
+            <FolderOpenOutlined />
+            <span 
+              className="cursor-pointer ml-1"
+              onClick={() => navigate('/spaces')}
+            >
+              空间管理
+            </span>
+          </Breadcrumb.Item>
+          {currentSpace && (
+            <Breadcrumb.Item>
+              <span 
+                className="cursor-pointer"
+                onClick={() => navigate(`/spaces/${spaceSlug}`)}
+              >
+                {currentSpace.name}
+              </span>
+            </Breadcrumb.Item>
+          )}
+          <Breadcrumb.Item>
+            <FileTextOutlined />
+            <span className="ml-1">创建文档</span>
+          </Breadcrumb.Item>
+        </Breadcrumb>
+
+        {/* 顶部操作栏 */}
+        <div className="flex items-center justify-between mb-6">
+          <div className="flex items-center space-x-4">
+            <Button 
+              icon={<ArrowLeftOutlined />} 
+              onClick={handleBack}
+            >
+              返回空间
+            </Button>
+            <Title level={3} className="mb-0">创建新文档</Title>
+          </div>
+          
+          <Space>
+            <div className="flex items-center space-x-2">
+              <Text>公开发布：</Text>
+              <Switch 
+                checked={isPublic}
+                onChange={setIsPublic}
+              />
+            </div>
+            <Button
+              type="primary"
+              icon={<SaveOutlined />}
+              loading={saving}
+              onClick={handleSave}
+              disabled={!title.trim()}
+            >
+              创建文档
+            </Button>
+          </Space>
+        </div>
+
+        {/* 文档标题输入 */}
+        <Card className="mb-4">
+          <Input
+            size="large"
+            placeholder="请输入文档标题..."
+            value={title}
+            onChange={(e) => setTitle(e.target.value)}
+            className="text-xl font-semibold border-none shadow-none"
+            style={{ padding: 0 }}
+          />
+        </Card>
+
+        {/* Markdown编辑器 */}
+        <Card className="h-full">
+          <MDEditor
+            value={content}
+            onChange={(value) => setContent(value || '')}
+            preview={activeTab === 'preview' ? 'preview' : activeTab === 'edit' ? 'edit' : 'live'}
+            hideToolbar={false}
+            visibleDragBar={false}
+            data-color-mode="light"
+            height={window.innerHeight - 320}
+            style={{
+              backgroundColor: 'transparent'
+            }}
+          />
+          
+          {/* 底部工具栏 */}
+          <div className="flex items-center justify-between mt-4 pt-4 border-t">
+            <div className="flex items-center space-x-4">
+              <Text type="secondary">编辑模式：</Text>
+              <Tabs
+                activeKey={activeTab}
+                onChange={setActiveTab}
+                size="small"
+                items={[
+                  {
+                    key: 'edit',
+                    label: (
+                      <span>
+                        <EditOutlined className="mr-1" />
+                        编辑
+                      </span>
+                    )
+                  },
+                  {
+                    key: 'split',
+                    label: (
+                      <span>
+                        <SplitCellsOutlined className="mr-1" />
+                        分屏
+                      </span>
+                    )
+                  },
+                  {
+                    key: 'preview',
+                    label: (
+                      <span>
+                        <EyeOutlined className="mr-1" />
+                        预览
+                      </span>
+                    )
+                  }
+                ]}
+              />
+            </div>
+            
+            <div className="flex items-center space-x-2 text-sm text-gray-500">
+              <span>字符数: {content.length}</span>
+              <span>|</span>
+              <span>支持粘贴Markdown格式内容</span>
+            </div>
+          </div>
+        </Card>
+      </Content>
+    </Layout>
+  )
+}
+
+export default DocumentCreatePage
