@@ -39,7 +39,7 @@ interface DocumentCreateParams extends RouteParams {
 const DocumentCreatePage: React.FC = () => {
   const { spaceSlug } = useParams<DocumentCreateParams>()
   const navigate = useNavigate()
-  const { createDocument, loading } = useDocStore()
+  const { createDocument } = useDocStore()
   const { currentSpace, loadSpace } = useSpaceStore()
   
   const [content, setContent] = useState(`# 新文档
@@ -85,7 +85,7 @@ function hello() {
     if (spaceSlug && (!currentSpace || currentSpace.slug !== spaceSlug)) {
       loadSpace(spaceSlug)
     }
-  }, [spaceSlug, currentSpace, loadSpace])
+  }, [spaceSlug]) // 只依赖 spaceSlug，不依赖 currentSpace
 
 
   const handleSave = useCallback(async () => {
@@ -94,18 +94,21 @@ function hello() {
       return
     }
 
-    // 生成slug
-    const slug = title
+    // 生成slug - 支持中文
+    // 将中文转换为拼音或使用时间戳作为slug
+    const timestamp = Date.now()
+    const randomStr = Math.random().toString(36).substring(2, 8)
+    
+    // 如果标题包含英文，尝试提取英文部分作为slug
+    const englishPart = title
       .toLowerCase()
       .replace(/[^a-z0-9\s-]/g, '')
       .replace(/\s+/g, '-')
       .replace(/-+/g, '-')
       .trim()
-
-    if (!slug) {
-      message.error('无效的文档标题')
-      return
-    }
+    
+    // 如果有英文部分就使用，否则使用时间戳
+    const slug = englishPart || `doc-${timestamp}-${randomStr}`
 
     setSaving(true)
     try {
@@ -114,7 +117,7 @@ function hello() {
         slug,
         content,
         is_published: isPublic,
-        parent_id: null
+        parent_id: undefined
       }
 
       await createDocument(spaceSlug, documentData)
@@ -222,7 +225,7 @@ function hello() {
             onChange={(value) => setContent(value || '')}
             preview={activeTab === 'preview' ? 'preview' : activeTab === 'edit' ? 'edit' : 'live'}
             hideToolbar={false}
-            visibleDragBar={false}
+            visibleDragbar={false}
             data-color-mode="light"
             height={window.innerHeight - 320}
             style={{
