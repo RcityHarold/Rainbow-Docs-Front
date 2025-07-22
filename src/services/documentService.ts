@@ -19,7 +19,7 @@ export const documentService = {
     if (query?.limit) params.append('limit', query.limit.toString())
     if (query?.search) params.append('search', query.search)
     if (query?.parent_id) params.append('parent_id', query.parent_id)
-    if (query?.is_published !== undefined) params.append('is_published', query.is_published.toString())
+    if (query?.is_public !== undefined) params.append('is_public', query.is_public.toString())
     
     const queryString = params.toString()
     return request.get(`/docs/documents/${spaceSlug}${queryString ? `?${queryString}` : ''}`)
@@ -29,6 +29,10 @@ export const documentService = {
   getDocument: (spaceSlug: string, docSlug: string): Promise<ApiResponse<Document>> =>
     request.get(`/docs/documents/${spaceSlug}/${docSlug}`),
 
+  // 根据ID获取文档详情
+  getDocumentById: (docId: string): Promise<ApiResponse<Document>> =>
+    request.get(`/docs/documents/id/${docId}`),
+
   // 创建文档
   createDocument: (spaceSlug: string, data: CreateDocumentRequest): Promise<ApiResponse<Document>> =>
     request.post(`/docs/documents/${spaceSlug}`, data),
@@ -37,9 +41,17 @@ export const documentService = {
   updateDocument: (spaceSlug: string, docSlug: string, data: UpdateDocumentRequest): Promise<ApiResponse<Document>> =>
     request.put(`/docs/documents/${spaceSlug}/${docSlug}`, data),
 
+  // 根据ID更新文档
+  updateDocumentById: (docId: string, data: UpdateDocumentRequest): Promise<ApiResponse<Document>> =>
+    request.put(`/docs/documents/id/${docId}`, data),
+
   // 删除文档
   deleteDocument: (spaceSlug: string, docSlug: string): Promise<ApiResponse<null>> =>
     request.delete(`/docs/documents/${spaceSlug}/${docSlug}`),
+
+  // 根据ID删除文档
+  deleteDocumentById: (docId: string): Promise<ApiResponse<null>> =>
+    request.delete(`/docs/documents/id/${docId}`),
 
   // 获取文档树结构
   getDocumentTree: (spaceSlug: string): Promise<ApiResponse<DocumentTreeNode[]>> =>
@@ -52,6 +64,10 @@ export const documentService = {
   // 获取文档面包屑
   getDocumentBreadcrumbs: (spaceSlug: string, docSlug: string): Promise<ApiResponse<Document[]>> =>
     request.get(`/docs/documents/${spaceSlug}/${docSlug}/breadcrumbs`),
+
+  // 根据ID获取文档面包屑
+  getDocumentBreadcrumbsById: (docId: string): Promise<ApiResponse<Document[]>> =>
+    request.get(`/docs/documents/id/${docId}/breadcrumbs`),
 
   // 移动文档
   moveDocument: (spaceSlug: string, docSlug: string, data: {

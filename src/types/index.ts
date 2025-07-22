@@ -48,8 +48,8 @@ export interface Document {
   content: string
   excerpt?: string
   parent_id?: string
-  sort_order: number
-  is_published: boolean
+  order_index: number
+  is_public: boolean
   is_deleted: boolean
   created_by: string
   created_at: string
@@ -62,8 +62,8 @@ export interface DocumentTreeNode {
   id: string
   title: string
   slug: string
-  is_published: boolean
-  sort_order: number
+  is_public: boolean
+  order_index: number
   children: DocumentTreeNode[]
 }
 
@@ -72,13 +72,13 @@ export interface CreateDocumentRequest {
   slug: string
   content: string
   parent_id?: string
-  is_published: boolean
+  is_public: boolean
 }
 
 export interface UpdateDocumentRequest {
   title?: string
   content?: string
-  is_published?: boolean
+  is_public?: boolean
 }
 
 // 文档查询和响应类型
@@ -87,7 +87,7 @@ export interface DocumentQuery {
   limit?: number
   search?: string
   parent_id?: string
-  is_published?: boolean
+  is_public?: boolean
 }
 
 export interface DocumentListItem {
@@ -95,10 +95,10 @@ export interface DocumentListItem {
   title: string
   slug: string
   excerpt?: string
-  is_published: boolean
+  is_public: boolean
   created_at: string
   updated_at: string
-  sort_order: number
+  order_index: number
 }
 
 export interface DocumentListResponse {

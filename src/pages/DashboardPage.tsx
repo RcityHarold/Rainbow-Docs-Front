@@ -250,7 +250,7 @@ const DashboardPage: React.FC = () => {
                     <Button 
                       type="link" 
                       size="small"
-                      onClick={() => navigate(`/spaces/dev/docs/${doc.id}`)}
+                      onClick={() => navigate(`/docs/${doc.id}`)}
                     >
                       查看
                     </Button>

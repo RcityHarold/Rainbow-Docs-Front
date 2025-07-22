@@ -17,8 +17,12 @@ import DashboardPage from '@/pages/DashboardPage'
 import SpaceDetailPage from '@/pages/space/SpaceDetailPage'
 import SpaceListPage from '@/pages/space/SpaceListPage'
 import DocumentViewPage from '@/pages/document/DocumentViewPage'
+import DocumentByIdViewPage from '@/pages/document/DocumentByIdViewPage'
 import DocumentEditPage from '@/pages/document/DocumentEditPage'
 import DocumentCreatePage from '@/pages/document/DocumentCreatePage'
+import DocumentListPage from '@/pages/document/DocumentListPage'
+import RecentDocumentsPage from '@/pages/document/RecentDocumentsPage'
+import DraftsPage from '@/pages/document/DraftsPage'
 import SearchPage from '@/pages/SearchPage'
 import ProfilePage from '@/pages/profile/ProfilePage'
 import NotFoundPage from '@/pages/NotFoundPage'
@@ -152,9 +156,14 @@ const App: React.FC = () => {
                   <Route path="/dashboard" element={<DashboardPage />} />
                   <Route path="/spaces" element={<SpaceListPage />} />
                   <Route path="/spaces/:spaceSlug" element={<SpaceDetailPage />} />
+                  <Route path="/spaces/:spaceSlug/docs" element={<DocumentListPage />} />
                   <Route path="/spaces/:spaceSlug/docs/new" element={<DocumentCreatePage />} />
                   <Route path="/spaces/:spaceSlug/docs/:docSlug" element={<DocumentViewPage />} />
                   <Route path="/spaces/:spaceSlug/docs/:docSlug/edit" element={<DocumentEditPage />} />
+                  <Route path="/docs/:docId" element={<DocumentByIdViewPage />} />
+                  <Route path="/docs/:docId/edit" element={<DocumentEditPage />} />
+                  <Route path="/documents" element={<RecentDocumentsPage />} />
+                  <Route path="/documents/drafts" element={<DraftsPage />} />
                   <Route path="/search" element={<SearchPage />} />
                   <Route path="/profile" element={<ProfilePage />} />
                   <Route path="/404" element={<NotFoundPage />} />

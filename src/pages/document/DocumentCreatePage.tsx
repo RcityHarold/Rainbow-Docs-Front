@@ -116,13 +116,14 @@ function hello() {
         title: title.trim(),
         slug,
         content,
-        is_published: isPublic,
+        is_public: isPublic,
         parent_id: undefined
       }
 
-      await createDocument(spaceSlug, documentData)
+      const createdDocument = await createDocument(spaceSlug, documentData)
       message.success('文档创建成功')
-      navigate(`/spaces/${spaceSlug}/docs/${slug}`)
+      // 使用文档ID跳转到基于ID的路由，而不是基于slug的路由
+      navigate(`/docs/${createdDocument.id}`)
     } catch (error) {
       message.error('创建文档失败')
       console.error('Create document error:', error)

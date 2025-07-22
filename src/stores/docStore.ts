@@ -30,9 +30,12 @@ interface DocumentState {
   setDocumentTree: (tree: DocumentTreeNode[]) => void
   loadDocumentTree: (spaceSlug: string) => Promise<void>
   loadDocument: (spaceSlug: string, docSlug: string) => Promise<void>
+  loadDocumentById: (docId: string) => Promise<void>
   createDocument: (spaceSlug: string, data: CreateDocumentRequest) => Promise<Document>
   updateDocument: (spaceSlug: string, docSlug: string, data: UpdateDocumentRequest) => Promise<void>
+  updateDocumentById: (docId: string, data: UpdateDocumentRequest) => Promise<void>
   deleteDocument: (spaceSlug: string, docSlug: string) => Promise<void>
+  deleteDocumentById: (docId: string) => Promise<void>
   
   // 编辑相关
   startEditing: () => void
@@ -79,7 +82,7 @@ export const useDocStore = create<DocumentState>((set, get) => ({
     try {
       const response = await documentService.getDocumentTree(spaceSlug)
       set({ 
-        documentTree: response.data,
+        documentTree: response.data.data, // 修复：使用 response.data.data
         loading: false 
       })
     } catch (error: any) {
@@ -95,8 +98,26 @@ export const useDocStore = create<DocumentState>((set, get) => ({
     try {
       const response = await documentService.getDocument(spaceSlug, docSlug)
       set({ 
-        currentDocument: response.data,
-        editingContent: response.data.content,
+        currentDocument: response.data.data, // 修复：使用 response.data.data
+        editingContent: response.data.data.content,
+        hasUnsavedChanges: false,
+        loading: false
+      })
+    } catch (error: any) {
+      set({ 
+        loading: false,
+        error: error.response?.data?.message || '加载文档失败'
+      })
+    }
+  },
+
+  loadDocumentById: async (docId: string) => {
+    set({ loading: true, error: null })
+    try {
+      const response = await documentService.getDocumentById(docId)
+      set({ 
+        currentDocument: response.data.data,
+        editingContent: response.data.data.content,
         hasUnsavedChanges: false,
         loading: false
       })
@@ -117,7 +138,7 @@ export const useDocStore = create<DocumentState>((set, get) => ({
       get().loadDocumentTree(spaceSlug)
       
       set({ saving: false })
-      return response.data
+      return response.data.data // 修复：使用 response.data.data
     } catch (error: any) {
       set({ 
         saving: false,
@@ -154,6 +175,33 @@ export const useDocStore = create<DocumentState>((set, get) => ({
     }
   },
 
+  updateDocumentById: async (docId: string, data: UpdateDocumentRequest) => {
+    set({ saving: true, error: null })
+    try {
+      await documentService.updateDocumentById(docId, data)
+      
+      // 更新当前文档
+      const { currentDocument } = get()
+      if (currentDocument && currentDocument.id === docId) {
+        set({ 
+          currentDocument: {
+            ...currentDocument,
+            ...data,
+            updated_at: new Date().toISOString()
+          },
+          hasUnsavedChanges: false,
+          saving: false
+        })
+      }
+    } catch (error: any) {
+      set({ 
+        saving: false,
+        error: error.response?.data?.message || '更新文档失败'
+      })
+      throw error
+    }
+  },
+
   deleteDocument: async (spaceSlug: string, docSlug: string) => {
     set({ loading: true, error: null })
     try {
@@ -165,6 +213,27 @@ export const useDocStore = create<DocumentState>((set, get) => ({
       // 如果删除的是当前文档，清空当前文档
       const { currentDocument } = get()
       if (currentDocument?.slug === docSlug) {
+        set({ currentDocument: null, editingContent: '' })
+      }
+      
+      set({ loading: false })
+    } catch (error: any) {
+      set({ 
+        loading: false,
+        error: error.response?.data?.message || '删除文档失败'
+      })
+      throw error
+    }
+  },
+
+  deleteDocumentById: async (docId: string) => {
+    set({ loading: true, error: null })
+    try {
+      await documentService.deleteDocumentById(docId)
+      
+      // 如果删除的是当前文档，清空当前文档
+      const { currentDocument } = get()
+      if (currentDocument?.id === docId) {
         set({ currentDocument: null, editingContent: '' })
       }
       

@@ -41,18 +41,21 @@ const { TextArea } = Input
 const { TabPane } = Tabs
 
 interface DocumentParams extends RouteParams {
-  spaceSlug: string
-  docSlug: string
+  spaceSlug?: string
+  docSlug?: string
+  docId?: string
 }
 
 const DocumentEditPage: React.FC = () => {
-  const { spaceSlug, docSlug } = useParams<DocumentParams>()
+  const { spaceSlug, docSlug, docId } = useParams<DocumentParams>()
   const navigate = useNavigate()
   const { 
     currentDocument, 
     currentSpace,
     loadDocument, 
+    loadDocumentById,
     updateDocument,
+    updateDocumentById,
     loading,
     saving,
     hasUnsavedChanges,
@@ -71,24 +74,34 @@ const DocumentEditPage: React.FC = () => {
   // 防抖保存函数
   const debouncedSave = useCallback(
     debounce(async (content: string) => {
-      if (autoSave && hasUnsavedChanges && currentDocument && currentSpace) {
+      if (autoSave && hasUnsavedChanges && currentDocument) {
         try {
-          await updateDocument(currentSpace.slug, currentDocument.slug, { content })
+          if (docId) {
+            // 使用ID模式
+            await updateDocumentById(docId, { content })
+          } else if (currentSpace && spaceSlug && docSlug) {
+            // 使用传统模式
+            await updateDocument(currentSpace.slug, currentDocument.slug, { content })
+          }
           message.success('自动保存成功', 1)
         } catch (error) {
           message.error('自动保存失败', 1)
         }
       }
     }, 3000),
-    [autoSave, hasUnsavedChanges, currentDocument, currentSpace, updateDocument]
+    [autoSave, hasUnsavedChanges, currentDocument, currentSpace, updateDocument, updateDocumentById, docId, spaceSlug, docSlug]
   )
 
   useEffect(() => {
-    if (spaceSlug && docSlug) {
+    if (docId) {
+      // 使用ID模式加载文档
+      loadDocumentById(docId)
+    } else if (spaceSlug && docSlug) {
+      // 使用传统模式加载文档
       loadSpace(spaceSlug)
       loadDocument(spaceSlug, docSlug)
     }
-  }, [spaceSlug, docSlug])
+  }, [spaceSlug, docSlug, docId])
 
   useEffect(() => {
     if (currentDocument) {

@@ -50,7 +50,7 @@ const SpaceDetailPage: React.FC = () => {
     documentTree, 
     loadDocumentTree, 
     createDocument,
-    deleteDocument,
+    deleteDocumentById,
     loading: docLoading 
   } = useDocStore()
   
@@ -69,7 +69,7 @@ const SpaceDetailPage: React.FC = () => {
   const loadSpaceStats = async (slug: string) => {
     try {
       const response = await spaceService.getSpaceStats(slug)
-      setSpaceStats(response.data)
+      setSpaceStats(response.data.data) // 修复：使用 response.data.data
     } catch (error) {
       console.error('Failed to load space stats:', error)
     }
@@ -77,13 +77,13 @@ const SpaceDetailPage: React.FC = () => {
 
   const convertToTreeData = (nodes: DocumentTreeNode[]): DataNode[] => {
     return nodes.map(node => ({
-      key: node.slug,
+      key: node.id, // 使用ID而不是slug作为key
       title: (
         <div className="flex items-center justify-between group">
           <span className="flex items-center">
             <FileTextOutlined className="mr-2 text-blue-500" />
             {node.title}
-            {!node.is_published && (
+            {!node.is_public && (
               <Tag size="small" color="orange" className="ml-2">
                 草稿
               </Tag>
@@ -97,20 +97,20 @@ const SpaceDetailPage: React.FC = () => {
                     key: 'view',
                     label: '查看',
                     icon: <EyeOutlined />,
-                    onClick: () => navigate(`/spaces/${spaceSlug}/docs/${node.slug}`)
+                    onClick: () => navigate(`/docs/${node.id}`) // 使用ID导航
                   },
                   {
                     key: 'edit',
                     label: '编辑',
                     icon: <EditOutlined />,
-                    onClick: () => navigate(`/spaces/${spaceSlug}/docs/${node.slug}/edit`)
+                    onClick: () => navigate(`/docs/${node.id}/edit`) // 使用ID导航
                   },
                   {
                     key: 'delete',
                     label: '删除',
                     icon: <DeleteOutlined />,
                     danger: true,
-                    onClick: () => handleDeleteDocument(node.slug)
+                    onClick: () => handleDeleteDocument(node.id) // 使用ID删除
                   }
                 ]
               }}
@@ -131,13 +131,13 @@ const SpaceDetailPage: React.FC = () => {
     }))
   }
 
-  const handleDeleteDocument = (docSlug: string) => {
+  const handleDeleteDocument = (docId: string) => {
     Modal.confirm({
       title: '确认删除',
       content: '确定要删除这个文档吗？此操作不可恢复。',
       onOk: async () => {
         try {
-          await deleteDocument(spaceSlug!, docSlug)
+          await deleteDocumentById(docId) // 使用ID删除文档
           message.success('文档删除成功')
         } catch (error) {
           message.error('删除文档失败')
@@ -151,7 +151,7 @@ const SpaceDetailPage: React.FC = () => {
     const key = selectedKeys[0] as string
     if (key) {
       setSelectedDoc(key)
-      navigate(`/spaces/${spaceSlug}/docs/${key}`)
+      navigate(`/docs/${key}`) // 使用文档ID导航
     }
   }
 
@@ -184,13 +184,21 @@ const SpaceDetailPage: React.FC = () => {
             <Title level={4} className="mb-0">
               {currentSpace.name}
             </Title>
-            <Button
-              type="primary"
-              icon={<PlusOutlined />}
-              onClick={() => navigate(`/spaces/${spaceSlug}/docs/new`)}
-            >
-              新建文档
-            </Button>
+            <Space>
+              <Button
+                icon={<FileTextOutlined />}
+                onClick={() => navigate(`/spaces/${spaceSlug}/docs`)}
+              >
+                文档管理
+              </Button>
+              <Button
+                type="primary"
+                icon={<PlusOutlined />}
+                onClick={() => navigate(`/spaces/${spaceSlug}/docs/new`)}
+              >
+                新建文档
+              </Button>
+            </Space>
           </div>
           
           <Text type="secondary" className="block mb-4">
@@ -204,16 +212,16 @@ const SpaceDetailPage: React.FC = () => {
                 <div>
                   <Statistic 
                     title="文档" 
-                    value={spaceStats.total_documents}
+                    value={spaceStats.document_count}
                     prefix={<FileTextOutlined />}
                     valueStyle={{ fontSize: '14px' }}
                   />
                 </div>
                 <div>
                   <Statistic 
-                    title="成员" 
-                    value={spaceStats.total_members}
-                    prefix={<TeamOutlined />}
+                    title="浏览量" 
+                    value={spaceStats.view_count}
+                    prefix={<EyeOutlined />}
                     valueStyle={{ fontSize: '14px' }}
                   />
                 </div>

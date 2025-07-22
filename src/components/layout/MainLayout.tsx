@@ -75,11 +75,6 @@ const MainLayout: React.FC<MainLayoutProps> = ({ children }) => {
           label: '所有空间',
           onClick: () => navigate('/spaces'),
         },
-        {
-          key: '/spaces/create',
-          label: '创建空间',
-          onClick: () => navigate('/spaces/create'),
-        },
       ],
     },
     {
