@@ -96,9 +96,14 @@ export interface DocumentListItem {
   slug: string
   excerpt?: string
   is_public: boolean
+  parent_id?: string
+  order_index: number
+  author_id: string
+  view_count: number
   created_at: string
   updated_at: string
-  order_index: number
+  tags: string[]
+  children_count: number
 }
 
 export interface DocumentListResponse {
@@ -242,6 +247,96 @@ export interface SpaceListResponse {
   page: number
   limit: number
   total_pages: number
+}
+
+// 空间成员相关类型
+export interface SpaceMember {
+  id: string
+  space_id: string
+  user_id: string
+  role: MemberRole
+  permissions: string[]
+  status: MemberStatus
+  invited_at: string
+  accepted_at?: string
+  created_at: string
+  updated_at: string
+}
+
+export enum MemberRole {
+  Owner = 'owner',
+  Admin = 'admin',
+  Editor = 'editor',
+  Viewer = 'viewer',
+  Member = 'member'
+}
+
+export enum MemberStatus {
+  Pending = 'pending',
+  Accepted = 'accepted',
+  Rejected = 'rejected',
+  Removed = 'removed'
+}
+
+export interface InviteMemberRequest {
+  email?: string
+  user_id?: string
+  role: MemberRole
+  message?: string
+  expires_in_days?: number
+}
+
+export interface UpdateMemberRequest {
+  role?: MemberRole
+  permissions?: string[]
+}
+
+export interface SpaceInvitation {
+  id: string
+  space_id: string
+  email?: string
+  user_id?: string
+  invite_token: string
+  role: MemberRole
+  permissions: string[]
+  invited_by: string
+  message?: string
+  max_uses: number
+  used_count: number
+  expires_at: string
+  created_at: string
+  updated_at: string
+}
+
+export interface AcceptInvitationRequest {
+  invite_token: string
+}
+
+// 通知相关类型
+export type NotificationType = 'space_invitation' | 'document_shared' | 'comment_mention' | 'document_update' | 'system'
+
+export interface Notification {
+  id: string
+  user_id: string
+  type: NotificationType
+  title: string
+  content: string
+  data?: Record<string, any>
+  is_read: boolean
+  read_at?: string
+  created_at: string
+  updated_at: string
+}
+
+export interface NotificationListQuery {
+  page?: number
+  limit?: number
+  unread_only?: boolean
+}
+
+export interface NotificationListResponse {
+  notifications: Notification[]
+  total: number
 }
 
 // 通用类型

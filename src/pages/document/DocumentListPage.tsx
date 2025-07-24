@@ -63,8 +63,9 @@ const DocumentListPage: React.FC = () => {
     setLoading(true)
     try {
       const response = await documentService.getDocuments(spaceSlug, query)
-      setDocuments(response.data.documents)
-      setTotal(response.data.total)
+      const actualData = response.data.data || response.data
+      setDocuments(actualData.documents || [])
+      setTotal(actualData.total || 0)
     } catch (error) {
       message.error('加载文档列表失败')
     } finally {
@@ -250,9 +251,14 @@ const DocumentListPage: React.FC = () => {
 
         {/* 文档列表 */}
         <Card>
+          <div className="mb-4">
+            <Text type="secondary">
+              文档数量: {documents?.length || 0} / 总数: {total || 0}
+            </Text>
+          </div>
           <Table
             columns={columns}
-            dataSource={documents}
+            dataSource={documents || []}
             rowKey="id"
             loading={loading}
             pagination={false}

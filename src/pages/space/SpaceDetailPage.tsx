@@ -292,10 +292,20 @@ const SpaceDetailPage: React.FC = () => {
                 </div>
               </div>
               <div className="flex space-x-2">
+                <Button 
+                  icon={<TeamOutlined />}
+                  onClick={() => navigate(`/spaces/${spaceSlug}/members`)}
+                >
+                  成员管理
+                </Button>
                 <Button icon={<SettingOutlined />}>
                   设置
                 </Button>
-                <Button type="primary" icon={<PlusOutlined />}>
+                <Button 
+                  type="primary" 
+                  icon={<PlusOutlined />}
+                  onClick={() => navigate(`/spaces/${spaceSlug}/members`)}
+                >
                   添加成员
                 </Button>
               </div>

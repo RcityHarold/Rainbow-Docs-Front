@@ -16,6 +16,8 @@ import InitializePasswordPage from '@/pages/auth/InitializePasswordPage'
 import DashboardPage from '@/pages/DashboardPage'
 import SpaceDetailPage from '@/pages/space/SpaceDetailPage'
 import SpaceListPage from '@/pages/space/SpaceListPage'
+import SpaceMembersPage from '@/pages/space/SpaceMembersPage'
+import AcceptInvitationPage from '@/pages/invitation/AcceptInvitationPage'
 import DocumentViewPage from '@/pages/document/DocumentViewPage'
 import DocumentByIdViewPage from '@/pages/document/DocumentByIdViewPage'
 import DocumentEditPage from '@/pages/document/DocumentEditPage'
@@ -26,6 +28,7 @@ import DraftsPage from '@/pages/document/DraftsPage'
 import SearchPage from '@/pages/SearchPage'
 import ProfilePage from '@/pages/profile/ProfilePage'
 import NotFoundPage from '@/pages/NotFoundPage'
+import NotificationsPage from '@/pages/notifications'
 
 // 安装向导
 import InstallerApp from './InstallerApp'
@@ -145,6 +148,12 @@ const App: React.FC = () => {
           element={<InitializePasswordPage />}
         />
 
+        {/* 邀请接受页面（独立布局） */}
+        <Route
+          path="/invite/accept"
+          element={<AcceptInvitationPage />}
+        />
+
         {/* 受保护的路由 */}
         <Route
           path="/*"
@@ -156,6 +165,7 @@ const App: React.FC = () => {
                   <Route path="/dashboard" element={<DashboardPage />} />
                   <Route path="/spaces" element={<SpaceListPage />} />
                   <Route path="/spaces/:spaceSlug" element={<SpaceDetailPage />} />
+                  <Route path="/spaces/:spaceSlug/members" element={<SpaceMembersPage />} />
                   <Route path="/spaces/:spaceSlug/docs" element={<DocumentListPage />} />
                   <Route path="/spaces/:spaceSlug/docs/new" element={<DocumentCreatePage />} />
                   <Route path="/spaces/:spaceSlug/docs/:docSlug" element={<DocumentViewPage />} />
@@ -165,6 +175,7 @@ const App: React.FC = () => {
                   <Route path="/documents" element={<RecentDocumentsPage />} />
                   <Route path="/documents/drafts" element={<DraftsPage />} />
                   <Route path="/search" element={<SearchPage />} />
+                  <Route path="/notifications" element={<NotificationsPage />} />
                   <Route path="/profile" element={<ProfilePage />} />
                   <Route path="/404" element={<NotFoundPage />} />
                   <Route path="*" element={<Navigate to="/404" replace />} />

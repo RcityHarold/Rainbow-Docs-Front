@@ -9,11 +9,11 @@ import {
   SettingOutlined,
   LogoutOutlined,
   HomeOutlined,
-  FileTextOutlined,
   FolderOutlined
 } from '@ant-design/icons'
 import { useNavigate, useLocation } from 'react-router-dom'
 import { useAuthStore } from '@/stores/authStore'
+import NotificationDropdown from '@/components/notifications/NotificationDropdown'
 import type { MenuProps } from 'antd'
 
 const { Header, Sider, Content } = Layout
@@ -78,21 +78,10 @@ const MainLayout: React.FC<MainLayoutProps> = ({ children }) => {
       ],
     },
     {
-      key: 'documents',
-      icon: <FileTextOutlined />,
-      label: '文档管理',
-      children: [
-        {
-          key: '/documents',
-          label: '最近文档',
-          onClick: () => navigate('/documents'),
-        },
-        {
-          key: '/documents/drafts',
-          label: '草稿箱',
-          onClick: () => navigate('/documents/drafts'),
-        },
-      ],
+      key: '/notifications',
+      icon: <BellOutlined />,
+      label: '通知中心',
+      onClick: () => navigate('/notifications'),
     },
   ]
 
@@ -101,9 +90,6 @@ const MainLayout: React.FC<MainLayoutProps> = ({ children }) => {
     const path = location.pathname
     if (path.startsWith('/spaces/')) {
       return ['spaces']
-    }
-    if (path.startsWith('/documents/')) {
-      return ['documents']
     }
     return [path]
   }
@@ -184,13 +170,7 @@ const MainLayout: React.FC<MainLayoutProps> = ({ children }) => {
             />
 
             {/* 通知 */}
-            <Badge count={0} size="small">
-              <Button
-                type="text"
-                icon={<BellOutlined />}
-                className="text-gray-600 hover:text-gray-800"
-              />
-            </Badge>
+            <NotificationDropdown />
 
             {/* 用户菜单 */}
             <Dropdown
