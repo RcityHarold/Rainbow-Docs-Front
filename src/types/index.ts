@@ -322,6 +322,10 @@ export interface Notification {
   title: string
   content: string
   data?: Record<string, any>
+  invite_token?: string
+  space_name?: string
+  role?: string
+  inviter_name?: string
   is_read: boolean
   read_at?: string
   created_at: string

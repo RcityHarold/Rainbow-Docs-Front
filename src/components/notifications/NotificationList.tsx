@@ -119,13 +119,13 @@ const NotificationList: React.FC<NotificationListProps> = ({ onNotificationUpdat
 
   const handleSpaceInvitation = async (notification: Notification, accept: boolean) => {
     try {
-      const inviteToken = notification.data?.invite_token
+      const inviteToken = notificationService.getInviteToken(notification)
       if (!inviteToken) {
         message.error('邀请令牌无效')
         return
       }
 
-      await notificationService.handleSpaceInvitation(notification.id, inviteToken, accept)
+      await notificationService.handleSpaceInvitation(notification, accept)
       
       if (accept) {
         message.success('已接受空间邀请')
@@ -255,6 +255,20 @@ const NotificationList: React.FC<NotificationListProps> = ({ onNotificationUpdat
                     <Text className={!notification.is_read ? 'text-blue-800' : 'text-gray-600'}>
                       {notification.content}
                     </Text>
+                    {/* 显示空间邀请的额外信息 */}
+                    {notification.type === 'space_invitation' && (notification.space_name || notification.role || notification.inviter_name) && (
+                      <div className="mt-2 p-2 bg-gray-50 rounded text-sm">
+                        {notification.space_name && (
+                          <div><Text type="secondary">空间：</Text><Text strong>{notification.space_name}</Text></div>
+                        )}
+                        {notification.role && (
+                          <div><Text type="secondary">角色：</Text><Text>{notification.role}</Text></div>
+                        )}
+                        {notification.inviter_name && (
+                          <div><Text type="secondary">邀请者：</Text><Text>{notification.inviter_name}</Text></div>
+                        )}
+                      </div>
+                    )}
                     {notification.read_at && (
                       <Text type="secondary" className="text-xs block mt-1">
                         已读于 {dayjs(notification.read_at).fromNow()}

@@ -37,13 +37,26 @@ class NotificationService {
   }
 
   // 处理空间邀请通知
-  async handleSpaceInvitation(notificationId: string, inviteToken: string, accept: boolean): Promise<void> {
-    if (accept) {
-      // 接受邀请
-      await api.post('/docs/spaces/invitations/accept', { invite_token: inviteToken })
+  async handleSpaceInvitation(notification: Notification, accept: boolean): Promise<void> {
+    if (accept && notification.invite_token) {
+      // 接受邀请 - 使用新的独立字段
+      await api.post('/docs/spaces/invitations/accept', { invite_token: notification.invite_token })
     }
     // 标记通知为已读
-    await this.markAsRead(notificationId)
+    await this.markAsRead(notification.id)
+  }
+
+  // 获取邀请令牌 - 支持新旧版本
+  getInviteToken(notification: Notification): string | null {
+    // 优先使用新的独立字段
+    if (notification.invite_token) {
+      return notification.invite_token
+    }
+    // 回退到旧的data字段（兼容性）
+    if (notification.data?.invite_token) {
+      return notification.data.invite_token
+    }
+    return null
   }
 }
 
