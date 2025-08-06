@@ -14,7 +14,8 @@ import {
   Affix,
   Anchor,
   BackTop,
-  message
+  message,
+  Tree
 } from 'antd'
 import {
   EditOutlined,
@@ -32,7 +33,8 @@ import {
 import { useDocStore } from '@/stores/docStore'
 import { useSpaceStore } from '@/stores/spaceStore'
 import { documentService } from '@/services/documentService'
-import type { RouteParams } from '@/types'
+import type { RouteParams, DocumentTreeNode } from '@/types'
+import type { DataNode, TreeProps } from 'antd/lib/tree'
 import ReactMarkdown from 'react-markdown'
 import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter'
 import { tomorrow } from 'react-syntax-highlighter/dist/esm/styles/prism'
@@ -51,19 +53,30 @@ interface DocumentParams extends RouteParams {
 
 const DocumentViewPage: React.FC = () => {
   const { spaceSlug, docSlug } = useParams<DocumentParams>()
+  
   const navigate = useNavigate()
-  const { currentDocument, loadDocument, loading } = useDocStore()
+  const { currentDocument, loadDocument, loading, documentTree, loadDocumentTree } = useDocStore()
   const { currentSpace, loadSpace } = useSpaceStore()
   const [breadcrumbs, setBreadcrumbs] = useState<any[]>([])
   const [tocItems, setTocItems] = useState<any[]>([])
+  const [expandedKeys, setExpandedKeys] = useState<string[]>([])
+  const [selectedKeys, setSelectedKeys] = useState<string[]>([])
 
   useEffect(() => {
     if (spaceSlug && docSlug) {
       loadSpace(spaceSlug)
       loadDocument(spaceSlug, docSlug)
+      loadDocumentTree(spaceSlug)
       loadBreadcrumbs(spaceSlug, docSlug)
     }
   }, [spaceSlug, docSlug])
+
+  // 当文档加载完成后，设置选中状态
+  useEffect(() => {
+    if (currentDocument?.id) {
+      setSelectedKeys([currentDocument.id])
+    }
+  }, [currentDocument])
 
   useEffect(() => {
     if (currentDocument?.content) {
@@ -126,6 +139,40 @@ const DocumentViewPage: React.FC = () => {
     } catch (error) {
       message.error('导出失败')
     }
+  }
+
+  // 转换文档树数据
+  const convertToTreeData = (nodes: DocumentTreeNode[]): DataNode[] => {
+    return nodes.map(node => ({
+      key: node.id,
+      title: (
+        <div className="flex items-center">
+          <FileTextOutlined className="mr-2 text-blue-500" />
+          <span className="truncate">{node.title}</span>
+          {!node.is_public && (
+            <Tag size="small" color="orange" className="ml-2">
+              草稿
+            </Tag>
+          )}
+        </div>
+      ),
+      children: node.children?.length ? convertToTreeData(node.children) : undefined,
+      isLeaf: !node.children?.length
+    }))
+  }
+
+  // 文档树选择事件
+  const onTreeSelect: TreeProps['onSelect'] = (selectedKeys) => {
+    const key = selectedKeys[0] as string
+    if (key && key !== currentDocument?.id) {
+      const cleanId = key.replace(/^document:/, '')
+      navigate(`/docs/${cleanId}`)
+    }
+  }
+
+  // 文档树展开事件
+  const onTreeExpand: TreeProps['onExpand'] = (expandedKeys) => {
+    setExpandedKeys(expandedKeys as string[])
   }
 
   const markdownComponents = {
@@ -196,27 +243,61 @@ const DocumentViewPage: React.FC = () => {
 
   return (
     <Layout className="min-h-screen bg-white">
-      {/* 目录侧边栏 */}
-      {tocItems.length > 0 && (
-        <Sider width={250} className="bg-gray-50 border-r" theme="light">
-          <Affix offsetTop={80}>
-            <div className="p-4">
-              <Title level={5} className="mb-4">
-                目录
-              </Title>
-              <Anchor
-                affix={false}
-                bounds={20}
-                items={tocItems}
-                className="toc-anchor"
+      {/* 文档树侧边栏 */}
+      {documentTree.length > 0 && (
+        <Sider width={280} className="bg-gray-50 border-r" theme="light">
+          <Affix offsetTop={0}>
+            <div className="p-4 h-screen overflow-y-auto">
+              <div className="flex items-center justify-between mb-4">
+                <Title level={5} className="mb-0">
+                  文档列表
+                </Title>
+                <Button 
+                  type="text" 
+                  size="small"
+                  onClick={() => navigate(`/spaces/${spaceSlug}`)}
+                >
+                  返回空间
+                </Button>
+              </div>
+              <Tree
+                treeData={convertToTreeData(documentTree)}
+                onSelect={onTreeSelect}
+                onExpand={onTreeExpand}
+                expandedKeys={expandedKeys}
+                selectedKeys={selectedKeys}
+                showLine
+                showIcon
+                blockNode
+                className="document-tree"
               />
             </div>
           </Affix>
         </Sider>
       )}
 
-      {/* 主内容区 */}
-      <Content className="bg-white">
+      <Layout>
+        {/* 目录侧边栏 */}
+        {tocItems.length > 0 && (
+          <Sider width={250} className="bg-gray-50 border-r" theme="light">
+            <Affix offsetTop={0}>
+              <div className="p-4 h-screen overflow-y-auto">
+                <Title level={5} className="mb-4">
+                  目录
+                </Title>
+                <Anchor
+                  affix={false}
+                  bounds={20}
+                  items={tocItems}
+                  className="toc-anchor"
+                />
+              </div>
+            </Affix>
+          </Sider>
+        )}
+
+        {/* 主内容区 */}
+        <Content className="bg-white">
         <div className="max-w-4xl mx-auto p-6">
           {/* 面包屑导航 */}
           <Breadcrumb className="mb-6">
@@ -344,10 +425,11 @@ const DocumentViewPage: React.FC = () => {
             </div>
           </Card>
         </div>
-      </Content>
+        </Content>
 
-      {/* 回到顶部 */}
-      <BackTop />
+        {/* 回到顶部 */}
+        <BackTop />
+      </Layout>
     </Layout>
   )
 }

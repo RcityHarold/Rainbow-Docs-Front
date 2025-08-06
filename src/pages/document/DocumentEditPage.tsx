@@ -25,20 +25,20 @@ import {
   FileTextOutlined,
   SettingOutlined,
   ArrowLeftOutlined,
-  ExclamationCircleOutlined
+  ExclamationCircleOutlined,
+  EditOutlined,
+  SplitCellsOutlined
 } from '@ant-design/icons'
 import { useDocStore } from '@/stores/docStore'
 import { useSpaceStore } from '@/stores/spaceStore'
 import type { RouteParams } from '@/types'
-import ReactMarkdown from 'react-markdown'
-import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter'
-import { tomorrow } from 'react-syntax-highlighter/dist/esm/styles/prism'
+import MDEditor from '@uiw/react-md-editor'
+import '@uiw/react-md-editor/markdown-editor.css'
+import '@uiw/react-markdown-preview/markdown.css'
 import debounce from 'lodash/debounce'
 
 const { Content } = Layout
-const { Title, Text } = Typography
-const { TextArea } = Input
-const { TabPane } = Tabs
+const { Text } = Typography
 
 interface DocumentParams extends RouteParams {
   spaceSlug?: string
@@ -132,8 +132,8 @@ const DocumentEditPage: React.FC = () => {
     return () => window.removeEventListener('beforeunload', handleBeforeUnload)
   }, [hasUnsavedChanges])
 
-  const handleContentChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
-    updateEditingContent(e.target.value)
+  const handleContentChange = (value?: string) => {
+    updateEditingContent(value || '')
   }
 
   const handleSave = async () => {
@@ -153,10 +153,29 @@ const DocumentEditPage: React.FC = () => {
   }
 
   const handlePreview = () => {
-    navigate(`/spaces/${spaceSlug}/docs/${docSlug}`)
+    if (docId) {
+      // 使用ID模式路由
+      navigate(`/docs/${docId}`)
+    } else if (spaceSlug && docSlug) {
+      // 使用传统模式路由
+      navigate(`/spaces/${spaceSlug}/docs/${docSlug}`)
+    }
   }
 
   const handleBack = () => {
+    const navigateToView = () => {
+      if (docId) {
+        // 使用ID模式路由
+        navigate(`/docs/${docId}`)
+      } else if (spaceSlug && docSlug) {
+        // 使用传统模式路由
+        navigate(`/spaces/${spaceSlug}/docs/${docSlug}`)
+      } else {
+        // 兜底路由，返回仪表板
+        navigate('/dashboard')
+      }
+    }
+
     if (hasUnsavedChanges) {
       Modal.confirm({
         title: '确认离开',
@@ -164,33 +183,14 @@ const DocumentEditPage: React.FC = () => {
         content: '您有未保存的更改，确定要离开吗？',
         onOk: () => {
           stopEditing()
-          navigate(`/spaces/${spaceSlug}/docs/${docSlug}`)
+          navigateToView()
         }
       })
     } else {
-      navigate(`/spaces/${spaceSlug}/docs/${docSlug}`)
+      navigateToView()
     }
   }
 
-  const markdownComponents = {
-    code({ node, inline, className, children, ...props }: any) {
-      const match = /language-(\w+)/.exec(className || '')
-      return !inline && match ? (
-        <SyntaxHighlighter
-          style={tomorrow}
-          language={match[1]}
-          PreTag="div"
-          {...props}
-        >
-          {String(children).replace(/\n$/, '')}
-        </SyntaxHighlighter>
-      ) : (
-        <code className={className} {...props}>
-          {children}
-        </code>
-      )
-    }
-  }
 
   if (loading) {
     return (
@@ -234,15 +234,17 @@ const DocumentEditPage: React.FC = () => {
                         首页
                       </span>
                     </Breadcrumb.Item>
-                    <Breadcrumb.Item>
-                      <FolderOpenOutlined />
-                      <span 
-                        className="cursor-pointer ml-1"
-                        onClick={() => navigate(`/spaces/${spaceSlug}`)}
-                      >
-                        {currentSpace?.name}
-                      </span>
-                    </Breadcrumb.Item>
+                    {currentSpace && (
+                      <Breadcrumb.Item>
+                        <FolderOpenOutlined />
+                        <span 
+                          className="cursor-pointer ml-1"
+                          onClick={() => navigate(`/spaces/${currentSpace.slug}`)}
+                        >
+                          {currentSpace.name}
+                        </span>
+                      </Breadcrumb.Item>
+                    )}
                     <Breadcrumb.Item>
                       <FileTextOutlined />
                       <span className="ml-1">编辑: {currentDocument.title}</span>
@@ -284,57 +286,96 @@ const DocumentEditPage: React.FC = () => {
             </Card>
           </Affix>
 
-          {/* 编辑区域 */}
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            {/* 左侧编辑器 */}
-            <div>
-              <Card title="编辑器" className="h-full">
-                <Form form={form} layout="vertical">
-                  <Form.Item
-                    label="文档标题"
-                    name="title"
-                    rules={[{ required: true, message: '请输入文档标题' }]}
-                  >
-                    <Input placeholder="请输入文档标题" />
-                  </Form.Item>
+          {/* 文档标题和设置 */}
+          <Card className="mb-4">
+            <Form form={form} layout="vertical">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <Form.Item
+                  label="文档标题"
+                  name="title"
+                  rules={[{ required: true, message: '请输入文档标题' }]}
+                  className="md:col-span-2"
+                >
+                  <Input size="large" placeholder="请输入文档标题" />
+                </Form.Item>
 
-                  <Form.Item
-                    label="发布状态"
-                    name="is_published"
-                    valuePropName="checked"
-                  >
-                    <Switch 
-                      checkedChildren="已发布" 
-                      unCheckedChildren="草稿" 
-                    />
-                  </Form.Item>
+                <Form.Item
+                  label="发布状态"
+                  name="is_published"
+                  valuePropName="checked"
+                >
+                  <Switch 
+                    size="default"
+                    checkedChildren="已发布" 
+                    unCheckedChildren="草稿" 
+                  />
+                </Form.Item>
+              </div>
+            </Form>
+          </Card>
 
-                  <Form.Item label="文档内容">
-                    <TextArea
-                      value={editingContent}
-                      onChange={handleContentChange}
-                      placeholder="请输入文档内容（支持 Markdown）"
-                      rows={20}
-                      className="font-mono"
-                    />
-                  </Form.Item>
-                </Form>
-              </Card>
+          {/* Markdown编辑器 */}
+          <Card className="h-full">
+            <MDEditor
+              value={editingContent}
+              onChange={handleContentChange}
+              preview={activeTab === 'preview' ? 'preview' : activeTab === 'edit' ? 'edit' : 'live'}
+              hideToolbar={false}
+              visibleDragbar={false}
+              data-color-mode="light"
+              height={window.innerHeight - 400}
+              style={{
+                backgroundColor: 'transparent'
+              }}
+            />
+            
+            {/* 底部工具栏 */}
+            <div className="flex items-center justify-between mt-4 pt-4 border-t">
+              <div className="flex items-center space-x-4">
+                <Text type="secondary">编辑模式：</Text>
+                <Tabs
+                  activeKey={activeTab}
+                  onChange={setActiveTab}
+                  size="small"
+                  items={[
+                    {
+                      key: 'edit',
+                      label: (
+                        <span>
+                          <EditOutlined className="mr-1" />
+                          编辑
+                        </span>
+                      )
+                    },
+                    {
+                      key: 'split',
+                      label: (
+                        <span>
+                          <SplitCellsOutlined className="mr-1" />
+                          分屏
+                        </span>
+                      )
+                    },
+                    {
+                      key: 'preview',
+                      label: (
+                        <span>
+                          <EyeOutlined className="mr-1" />
+                          预览
+                        </span>
+                      )
+                    }
+                  ]}
+                />
+              </div>
+              
+              <div className="flex items-center space-x-2 text-sm text-gray-500">
+                <span>字符数: {editingContent?.length || 0}</span>
+                <span>|</span>
+                <span>支持粘贴Markdown格式内容</span>
+              </div>
             </div>
-
-            {/* 右侧预览 */}
-            <div>
-              <Card title="预览" className="h-full">
-                <div className="markdown-content prose prose-lg max-w-none">
-                  <ReactMarkdown
-                    components={markdownComponents}
-                  >
-                    {editingContent || '# 开始编写\n\n在左侧编辑器中输入内容，右侧将实时预览。'}
-                  </ReactMarkdown>
-                </div>
-              </Card>
-            </div>
-          </div>
+          </Card>
         </div>
       </Content>
 

@@ -15,7 +15,8 @@ import {
   Anchor,
   BackTop,
   message,
-  Drawer
+  Drawer,
+  Tree
 } from 'antd'
 import {
   EditOutlined,
@@ -34,7 +35,8 @@ import {
 import { useDocStore } from '@/stores/docStore'
 import { useSpaceStore } from '@/stores/spaceStore'
 import { documentService } from '@/services/documentService'
-import type { RouteParams } from '@/types'
+import type { RouteParams, DocumentTreeNode } from '@/types'
+import type { DataNode, TreeProps } from 'antd/lib/tree'
 import ReactMarkdown from 'react-markdown'
 import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter'
 import { tomorrow } from 'react-syntax-highlighter/dist/esm/styles/prism'
@@ -51,15 +53,21 @@ interface DocumentParams extends RouteParams {
 }
 
 const DocumentByIdViewPage: React.FC = () => {
+  console.log('=== DocumentByIdViewPage component loaded ===')
+  
   const { docId } = useParams<DocumentParams>()
+  console.log('DocId from params:', docId)
   const navigate = useNavigate()
-  const { currentDocument, loadDocumentById, loading } = useDocStore()
-  const { loadSpace } = useSpaceStore()
+  const { currentDocument, loadDocumentById, loading, documentTree } = useDocStore()
+  const { currentSpace, loadSpace } = useSpaceStore()
   
   const [headings, setHeadings] = useState<{ id: string; text: string; level: number }[]>([])
   const [spaceInfo, setSpaceInfo] = useState<any>(null)
   const [drawerVisible, setDrawerVisible] = useState(false)
+  const [treeDrawerVisible, setTreeDrawerVisible] = useState(false)
   const [isMobile, setIsMobile] = useState(false)
+  const [expandedKeys, setExpandedKeys] = useState<string[]>([])
+  const [selectedKeys, setSelectedKeys] = useState<string[]>([])
 
   // 检测屏幕尺寸
   useEffect(() => {
@@ -78,24 +86,35 @@ const DocumentByIdViewPage: React.FC = () => {
     }
   }, [docId, loadDocumentById])
 
-  // 当文档加载完成后，加载空间信息
+  // 使用currentSpace中的信息
   useEffect(() => {
-    if (currentDocument?.space_id) {
-      // 从space_id中提取slug或ID，这里需要根据实际数据结构调整
-      const spaceId = currentDocument.space_id.replace('space:', '')
-      loadSpaceInfo(spaceId)
+    if (currentSpace) {
+      setSpaceInfo({ 
+        id: currentSpace.id, 
+        name: currentSpace.name, 
+        slug: currentSpace.slug 
+      })
+    }
+  }, [currentSpace])
+
+  // 当文档加载完成后，使用currentSpace设置空间信息
+  useEffect(() => {
+    if (currentSpace) {
+      setSpaceInfo({ 
+        id: currentSpace.id, 
+        name: currentSpace.name, 
+        slug: currentSpace.slug 
+      })
+    }
+  }, [currentSpace])
+
+  // 当文档加载完成后，设置选中状态
+  useEffect(() => {
+    if (currentDocument?.id) {
+      setSelectedKeys([currentDocument.id])
     }
   }, [currentDocument])
 
-  const loadSpaceInfo = async (spaceId: string) => {
-    try {
-      // 这里可能需要调整，根据space_id的格式决定是用slug还是ID
-      // 暂时使用现有的方法
-      setSpaceInfo({ id: spaceId, name: '未知空间', slug: spaceId })
-    } catch (error) {
-      console.error('Failed to load space info:', error)
-    }
-  }
 
   // 从markdown内容中提取标题
   useEffect(() => {
@@ -132,6 +151,41 @@ const DocumentByIdViewPage: React.FC = () => {
       message.error('导出失败')
     }
   }
+
+  // 转换文档树数据
+  const convertToTreeData = (nodes: DocumentTreeNode[]): DataNode[] => {
+    return nodes.map(node => ({
+      key: node.id,
+      title: (
+        <div className="flex items-center">
+          <FileTextOutlined className="mr-2 text-blue-500" />
+          <span className="truncate">{node.title}</span>
+          {!node.is_public && (
+            <Tag size="small" color="orange" className="ml-2">
+              草稿
+            </Tag>
+          )}
+        </div>
+      ),
+      children: node.children?.length ? convertToTreeData(node.children) : undefined,
+      isLeaf: !node.children?.length
+    }))
+  }
+
+  // 文档树选择事件
+  const onTreeSelect: TreeProps['onSelect'] = (selectedKeys) => {
+    const key = selectedKeys[0] as string
+    if (key && key !== currentDocument?.id) {
+      const cleanId = key.replace(/^document:/, '')
+      navigate(`/docs/${cleanId}`)
+    }
+  }
+
+  // 文档树展开事件
+  const onTreeExpand: TreeProps['onExpand'] = (expandedKeys) => {
+    setExpandedKeys(expandedKeys as string[])
+  }
+
 
   if (loading) {
     return (
@@ -237,13 +291,24 @@ const DocumentByIdViewPage: React.FC = () => {
 
               {/* 操作按钮 */}
               <div className="flex items-center gap-2 flex-shrink-0">
-                {/* 移动端目录按钮 */}
-                {isMobile && headings.length > 0 && (
-                  <Button
-                    icon={<MenuOutlined />}
-                    onClick={() => setDrawerVisible(true)}
-                    className="shadow-md hover:shadow-lg transition-shadow"
-                  />
+                {/* 移动端按钮 */}
+                {isMobile && (
+                  <>
+                    {documentTree.length > 0 && (
+                      <Button
+                        icon={<FolderOpenOutlined />}
+                        onClick={() => setTreeDrawerVisible(true)}
+                        className="shadow-md hover:shadow-lg transition-shadow"
+                      />
+                    )}
+                    {headings.length > 0 && (
+                      <Button
+                        icon={<MenuOutlined />}
+                        onClick={() => setDrawerVisible(true)}
+                        className="shadow-md hover:shadow-lg transition-shadow"
+                      />
+                    )}
+                  </>
                 )}
                 
                 <Space size="small" wrap>
@@ -302,9 +367,42 @@ const DocumentByIdViewPage: React.FC = () => {
           </div>
 
           {/* 文档内容区域 */}
-          <Layout className="bg-white">
+          <div className="bg-white flex flex-row h-full">
+            {/* 文档树侧边栏 - 桌面端 */}
+            {!isMobile && documentTree.length > 0 && (
+              <div className="w-80 bg-gray-50 border-r border-gray-200 flex-shrink-0">
+                <div className="p-4 h-full overflow-y-auto">
+                  <div className="flex items-center justify-between mb-4">
+                    <div className="text-lg font-semibold text-gray-800">
+                      文档列表
+                    </div>
+                    {spaceInfo && (
+                      <Button 
+                        type="text" 
+                        size="small"
+                        onClick={() => navigate(`/spaces/${spaceInfo.slug}`)}
+                      >
+                        返回空间
+                      </Button>
+                    )}
+                  </div>
+                  <Tree
+                    treeData={convertToTreeData(documentTree)}
+                    onSelect={onTreeSelect}
+                    onExpand={onTreeExpand}
+                    expandedKeys={expandedKeys}
+                    selectedKeys={selectedKeys}
+                    showLine
+                    showIcon
+                    blockNode
+                    className="document-tree"
+                  />
+                </div>
+              </div>
+            )}
+            
             {/* 主内容 */}
-            <Content className="px-4 sm:px-8 lg:px-12 py-6 sm:py-8">
+            <div className="flex-1 px-4 sm:px-8 lg:px-12 py-6 sm:py-8">
               <div className={`${!isMobile && headings.length > 0 ? 'lg:pr-80' : ''}`}>
                 <article className="prose prose-lg max-w-none">
                   {/* 文档头部信息 */}
@@ -485,7 +583,7 @@ const DocumentByIdViewPage: React.FC = () => {
                   </div>
                 </article>
               </div>
-            </Content>
+            </div>
             
             {/* 桌面端右侧目录 */}
             {!isMobile && headings.length > 0 && (
@@ -493,7 +591,47 @@ const DocumentByIdViewPage: React.FC = () => {
                 <TableOfContents />
               </div>
             )}
-          </Layout>
+          </div>
+          
+          {/* 移动端文档树抽屉 */}
+          <Drawer
+            title={
+              <div className="flex items-center">
+                <FolderOpenOutlined className="mr-2 text-green-500" />
+                <span>文档列表</span>
+              </div>
+            }
+            placement="left"
+            onClose={() => setTreeDrawerVisible(false)}
+            open={treeDrawerVisible}
+            width={280}
+          >
+            <div className="p-4">
+              {spaceInfo && (
+                <div className="mb-4">
+                  <Button 
+                    type="text" 
+                    size="small"
+                    onClick={() => navigate(`/spaces/${spaceInfo.slug}`)}
+                    className="mb-2"
+                  >
+                    返回空间
+                  </Button>
+                </div>
+              )}
+              <Tree
+                treeData={convertToTreeData(documentTree)}
+                onSelect={onTreeSelect}
+                onExpand={onTreeExpand}
+                expandedKeys={expandedKeys}
+                selectedKeys={selectedKeys}
+                showLine
+                showIcon
+                blockNode
+                className="document-tree"
+              />
+            </div>
+          </Drawer>
           
           {/* 移动端目录抽屉 */}
           <Drawer

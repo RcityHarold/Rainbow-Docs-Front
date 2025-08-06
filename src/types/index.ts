@@ -7,6 +7,12 @@ export interface User {
   has_password: boolean
   account_status: 'Active' | 'Inactive' | 'Suspended' | 'PendingDeletion' | 'Deleted'
   last_login_at?: string
+  avatar_url?: string
+  // 预留更多字段，后端支持后可启用
+  name?: string
+  bio?: string
+  location?: string
+  website?: string
 }
 
 export interface LoginCredentials {
@@ -25,11 +31,34 @@ export interface Space {
   name: string
   slug: string
   description?: string
+  avatar_url?: string
   is_public: boolean
-  created_by: string
+  owner_id: string
+  created_by?: string  // 保留兼容性
   created_at: string
   updated_at: string
-  is_deleted: boolean
+  is_deleted?: boolean
+  settings?: {
+    theme: string
+    allow_comments: boolean
+    allow_search: boolean
+    custom_domain?: string
+    analytics_id?: string
+    custom_css?: string
+    navigation: {
+      show_breadcrumbs: boolean
+      show_navigation: boolean
+      show_edit_links: boolean
+      custom_links: any[]
+    }
+  }
+  stats?: {
+    document_count: number
+    public_document_count: number
+    comment_count: number
+    view_count: number
+    last_activity?: string
+  }
 }
 
 export interface CreateSpaceRequest {

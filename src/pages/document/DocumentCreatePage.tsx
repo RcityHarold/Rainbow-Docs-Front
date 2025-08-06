@@ -1,5 +1,5 @@
 import React, { useState, useCallback, useEffect } from 'react'
-import { useParams, useNavigate } from 'react-router-dom'
+import { useParams, useNavigate, useSearchParams } from 'react-router-dom'
 import {
   Layout,
   Typography,
@@ -36,11 +36,30 @@ interface DocumentCreateParams extends RouteParams {
   spaceSlug: string
 }
 
+// URL查询参数类型
+interface CreateDocumentQuery {
+  parent_id?: string
+  parent_title?: string
+}
+
 const DocumentCreatePage: React.FC = () => {
   const { spaceSlug } = useParams<DocumentCreateParams>()
   const navigate = useNavigate()
+  const [searchParams] = useSearchParams()
   const { createDocument } = useDocStore()
   const { currentSpace, loadSpace } = useSpaceStore()
+  
+  // 通用ID清理函数
+  const cleanId = (id: string | null | undefined): string | null => {
+    if (!id) return null
+    return id.replace(/^(document|space|user):/, '')
+  }
+
+  // 从URL参数获取父文档信息，并清理ID格式
+  const rawParentId = searchParams.get('parent_id')
+  const parentId = cleanId(rawParentId)
+  const parentTitle = searchParams.get('parent_title')
+  
   
   const [content, setContent] = useState(`# 新文档
 
@@ -112,18 +131,29 @@ function hello() {
 
     setSaving(true)
     try {
+      // parent_id已经在上面清理过了，直接使用
+      
       const documentData: CreateDocumentRequest = {
         title: title.trim(),
         slug,
         content,
         is_public: isPublic,
-        parent_id: undefined
+        parent_id: parentId || undefined
       }
 
       const createdDocument = await createDocument(spaceSlug, documentData)
       message.success('文档创建成功')
-      // 使用文档ID跳转到基于ID的路由，而不是基于slug的路由
-      navigate(`/docs/${createdDocument.id}`)
+      
+      // 使用清理函数处理文档ID
+      const cleanDocId = cleanId(createdDocument.id)
+      
+      if (cleanDocId) {
+        // 使用清理后的文档ID跳转到基于ID的路由
+        navigate(`/docs/${cleanDocId}`)
+      } else {
+        // 如果ID清理失败，回退到空间页面
+        navigate(`/spaces/${spaceSlug}`)
+      }
     } catch (error) {
       message.error('创建文档失败')
       console.error('Create document error:', error)
@@ -169,9 +199,15 @@ function hello() {
               </span>
             </Breadcrumb.Item>
           )}
+          {parentTitle && (
+            <Breadcrumb.Item>
+              <FileTextOutlined />
+              <span className="ml-1">{parentTitle}</span>
+            </Breadcrumb.Item>
+          )}
           <Breadcrumb.Item>
             <FileTextOutlined />
-            <span className="ml-1">创建文档</span>
+            <span className="ml-1">{parentTitle ? '创建子文档' : '创建文档'}</span>
           </Breadcrumb.Item>
         </Breadcrumb>
 
@@ -184,7 +220,14 @@ function hello() {
             >
               返回空间
             </Button>
-            <Title level={3} className="mb-0">创建新文档</Title>
+            <Title level={3} className="mb-0">
+              {parentTitle ? `创建 "${parentTitle}" 的子文档` : '创建新文档'}
+            </Title>
+            {parentTitle && (
+              <Text type="secondary" className="ml-2">
+                父文档：{parentTitle}
+              </Text>
+            )}
           </div>
           
           <Space>

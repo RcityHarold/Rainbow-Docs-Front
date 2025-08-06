@@ -11,7 +11,8 @@ import {
   Space,
   Tag,
   Empty,
-  Spin
+  Spin,
+  message
 } from 'antd'
 import { 
   FileTextOutlined, 
@@ -20,143 +21,143 @@ import {
   ClockCircleOutlined,
   PlusOutlined,
   StarOutlined,
-  TeamOutlined
+  TeamOutlined,
+  BookOutlined
 } from '@ant-design/icons'
 import { useNavigate } from 'react-router-dom'
 import { useAuthStore } from '@/stores/authStore'
+import { spaceService } from '@/services/spaceService'
+import { documentService } from '@/services/documentService'
+import { statsService } from '@/services/statsService'
 import dayjs from 'dayjs'
 import relativeTime from 'dayjs/plugin/relativeTime'
+import 'dayjs/locale/zh-cn'
+import type { Space as SpaceType, Document } from '@/types'
 
-// 扩展dayjs
+// 配置dayjs
 dayjs.extend(relativeTime)
+dayjs.locale('zh-cn')
 
 const { Title, Text } = Typography
 
-// 模拟数据接口
-interface DashboardStats {
-  totalSpaces: number
-  totalDocuments: number
-  totalViews: number
-  totalMembers: number
-}
-
-interface RecentDocument {
-  id: string
-  title: string
-  space: string
-  lastModified: string
-  author: string
-  status: 'published' | 'draft'
-}
-
-interface RecentSpace {
-  id: string
-  name: string
-  description: string
-  documentCount: number
-  memberCount: number
-  lastActivity: string
+// 扩展接口定义
+interface SpaceWithStats extends SpaceType {
+  stats?: {
+    document_count: number
+    public_document_count: number
+    comment_count: number
+    view_count: number
+    last_activity?: string
+  }
 }
 
 const DashboardPage: React.FC = () => {
   const navigate = useNavigate()
   const { user } = useAuthStore()
   const [loading, setLoading] = useState(true)
-  const [stats, setStats] = useState<DashboardStats>({
+  const [statsLoading, setStatsLoading] = useState(true)
+  const [recentDocuments, setRecentDocuments] = useState<Document[]>([])
+  const [recentSpaces, setRecentSpaces] = useState<SpaceWithStats[]>([])
+  const [stats, setStats] = useState({
     totalSpaces: 0,
     totalDocuments: 0,
     totalViews: 0,
     totalMembers: 0,
   })
 
-  // 模拟最近文档数据
-  const [recentDocuments] = useState<RecentDocument[]>([
-    {
-      id: '1',
-      title: 'API 接口文档',
-      space: '开发团队',
-      lastModified: '2024-01-15T10:30:00Z',
-      author: 'Alice',
-      status: 'published',
-    },
-    {
-      id: '2',
-      title: '产品需求文档',
-      space: '产品团队',
-      lastModified: '2024-01-15T09:15:00Z',
-      author: 'Bob',
-      status: 'draft',
-    },
-    {
-      id: '3',
-      title: '部署指南',
-      space: '运维团队',
-      lastModified: '2024-01-14T16:45:00Z',
-      author: 'Charlie',
-      status: 'published',
-    },
-  ])
-
-  // 模拟最近空间数据
-  const [recentSpaces] = useState<RecentSpace[]>([
-    {
-      id: '1',
-      name: '开发团队',
-      description: '技术文档和API参考',
-      documentCount: 25,
-      memberCount: 8,
-      lastActivity: '2024-01-15T10:30:00Z',
-    },
-    {
-      id: '2',
-      name: '产品团队',
-      description: '产品规划和需求文档',
-      documentCount: 18,
-      memberCount: 6,
-      lastActivity: '2024-01-15T09:15:00Z',
-    },
-    {
-      id: '3',
-      name: '运维团队',
-      description: '运维手册和部署指南',
-      documentCount: 12,
-      memberCount: 4,
-      lastActivity: '2024-01-14T16:45:00Z',
-    },
-  ])
-
   useEffect(() => {
-    const loadDashboardData = async () => {
-      try {
-        // 加载用户的空间列表
-        const spacesResponse = await fetch('/api/spaces?limit=10')
-        const spacesData = await spacesResponse.json()
-        
-        // 计算统计数据
-        const totalSpaces = spacesData.data?.items?.length || 0
-        
-        setStats({
-          totalSpaces,
-          totalDocuments: 0, // 需要从各个空间聚合
-          totalViews: 0,
-          totalMembers: 0,
-        })
-      } catch (error) {
-        console.error('加载仪表板数据失败:', error)
-        // 使用模拟数据作为回退
-        setStats({
-          totalSpaces: 0,
-          totalDocuments: 0,
-          totalViews: 0,
-          totalMembers: 0,
-        })
-      } finally {
-        setLoading(false)
-      }
-    }
-
     loadDashboardData()
   }, [])
+
+  const loadDashboardData = async () => {
+    try {
+      setLoading(true)
+      
+      // 并行加载数据
+      const [spacesResponse, statsResponse] = await Promise.all([
+        spaceService.getSpaces({ limit: 10, sort_order: 'desc' }),
+        statsService.getDocumentStats()
+      ])
+
+      // 处理空间数据
+      if (spacesResponse.data?.success && spacesResponse.data.data?.spaces) {
+        const spaces = spacesResponse.data.data.spaces
+        
+        // 获取每个空间的统计信息和最近文档
+        const spacesWithStats = await Promise.all(
+          spaces.slice(0, 3).map(async (space) => {
+            try {
+              const statsRes = await spaceService.getSpaceStats(space.slug)
+              return {
+                ...space,
+                stats: statsRes.data?.data
+              } as SpaceWithStats
+            } catch (error) {
+              console.error(`Failed to load stats for space ${space.slug}:`, error)
+              return space as SpaceWithStats
+            }
+          })
+        )
+        
+        setRecentSpaces(spacesWithStats)
+        
+        // 获取最近文档
+        const allDocuments: Document[] = []
+        for (const space of spaces.slice(0, 3)) {
+          try {
+            const docsRes = await documentService.getDocuments(space.slug, { 
+              limit: 5, 
+              sort: 'updated_at',
+              order: 'desc' 
+            })
+            if (docsRes.data?.success && docsRes.data.data?.documents) {
+              const docsWithSpace = docsRes.data.data.documents.map(doc => ({
+                ...doc,
+                space_name: space.name,
+                space_slug: space.slug
+              }))
+              allDocuments.push(...docsWithSpace)
+            }
+          } catch (error) {
+            console.error(`Failed to load documents for space ${space.slug}:`, error)
+          }
+        }
+        
+        // 按更新时间排序并取前5个
+        const sortedDocs = allDocuments
+          .sort((a, b) => new Date(b.updated_at).getTime() - new Date(a.updated_at).getTime())
+          .slice(0, 5)
+        
+        setRecentDocuments(sortedDocs)
+      }
+
+      // 处理统计数据
+      if (statsResponse.data?.success && statsResponse.data.data) {
+        const statsData = statsResponse.data.data
+        setStats({
+          totalSpaces: statsData.total_spaces,
+          totalDocuments: statsData.total_documents,
+          totalViews: 0, // 后端暂未实现
+          totalMembers: 0, // 后端暂未实现
+        })
+      }
+
+    } catch (error) {
+      console.error('加载仪表板数据失败:', error)
+      message.error('加载数据失败，请刷新重试')
+    } finally {
+      setLoading(false)
+      setStatsLoading(false)
+    }
+  }
+
+  const handleDocumentClick = (doc: Document & { space_slug?: string }) => {
+    if (doc.space_slug && doc.slug) {
+      navigate(`/spaces/${doc.space_slug}/docs/${doc.slug}`)
+    } else if (doc.id) {
+      navigate(`/docs/${doc.id}`)
+    }
+  }
 
   if (loading) {
     return (
@@ -181,7 +182,7 @@ const DashboardPage: React.FC = () => {
       {/* 统计数据 */}
       <Row gutter={[24, 24]} className="mb-8">
         <Col xs={24} sm={12} lg={6}>
-          <Card>
+          <Card loading={statsLoading}>
             <Statistic
               title="空间总数"
               value={stats.totalSpaces}
@@ -191,7 +192,7 @@ const DashboardPage: React.FC = () => {
           </Card>
         </Col>
         <Col xs={24} sm={12} lg={6}>
-          <Card>
+          <Card loading={statsLoading}>
             <Statistic
               title="文档总数"
               value={stats.totalDocuments}
@@ -201,7 +202,7 @@ const DashboardPage: React.FC = () => {
           </Card>
         </Col>
         <Col xs={24} sm={12} lg={6}>
-          <Card>
+          <Card loading={statsLoading}>
             <Statistic
               title="总浏览量"
               value={stats.totalViews}
@@ -211,7 +212,7 @@ const DashboardPage: React.FC = () => {
           </Card>
         </Col>
         <Col xs={24} sm={12} lg={6}>
-          <Card>
+          <Card loading={statsLoading}>
             <Statistic
               title="团队成员"
               value={stats.totalMembers}
@@ -235,7 +236,7 @@ const DashboardPage: React.FC = () => {
             extra={
               <Button 
                 type="link" 
-                onClick={() => navigate('/documents')}
+                onClick={() => navigate('/spaces')}
               >
                 查看全部
               </Button>
@@ -250,7 +251,7 @@ const DashboardPage: React.FC = () => {
                     <Button 
                       type="link" 
                       size="small"
-                      onClick={() => navigate(`/docs/${doc.id}`)}
+                      onClick={() => handleDocumentClick(doc)}
                     >
                       查看
                     </Button>
@@ -267,18 +268,18 @@ const DashboardPage: React.FC = () => {
                       <div className="flex items-center space-x-2">
                         <span>{doc.title}</span>
                         <Tag 
-                          color={doc.status === 'published' ? 'green' : 'orange'}
+                          color={doc.is_public ? 'green' : 'orange'}
                           size="small"
                         >
-                          {doc.status === 'published' ? '已发布' : '草稿'}
+                          {doc.is_public ? '已发布' : '草稿'}
                         </Tag>
                       </div>
                     }
                     description={
                       <div className="text-gray-500 space-y-1">
-                        <div>空间：{doc.space}</div>
+                        <div>空间：{(doc as any).space_name || '未知空间'}</div>
                         <div>
-                          {dayjs(doc.lastModified).fromNow()} · {doc.author}
+                          {dayjs(doc.updated_at).fromNow()} · {doc.author_name || '未知作者'}
                         </div>
                       </div>
                     }
@@ -324,7 +325,7 @@ const DashboardPage: React.FC = () => {
                     <Button 
                       type="link" 
                       size="small"
-                      onClick={() => navigate(`/spaces/${space.id}`)}
+                      onClick={() => navigate(`/spaces/${space.slug}`)}
                     >
                       进入
                     </Button>
@@ -340,18 +341,18 @@ const DashboardPage: React.FC = () => {
                     title={
                       <div className="flex items-center space-x-2">
                         <span>{space.name}</span>
-                        <StarOutlined className="text-yellow-500" />
+                        {space.is_public && <BookOutlined className="text-blue-500" title="公开空间" />}
                       </div>
                     }
                     description={
                       <div className="text-gray-500 space-y-1">
-                        <div>{space.description}</div>
+                        <div>{space.description || '暂无描述'}</div>
                         <div className="flex space-x-4 text-sm">
-                          <span>{space.documentCount} 篇文档</span>
-                          <span>{space.memberCount} 名成员</span>
+                          <span>{space.stats?.document_count || 0} 篇文档</span>
+                          <span>{space.stats?.view_count || 0} 次浏览</span>
                         </div>
                         <div>
-                          最后活动：{dayjs(space.lastActivity).fromNow()}
+                          最后活动：{space.stats?.last_activity ? dayjs(space.stats.last_activity).fromNow() : '暂无活动'}
                         </div>
                       </div>
                     }
@@ -364,7 +365,14 @@ const DashboardPage: React.FC = () => {
               <Empty 
                 description="暂无空间"
                 image={Empty.PRESENTED_IMAGE_SIMPLE}
-              />
+              >
+                <Button 
+                  type="primary" 
+                  onClick={() => navigate('/spaces/create')}
+                >
+                  创建第一个空间
+                </Button>
+              </Empty>
             )}
           </Card>
         </Col>
@@ -387,10 +395,10 @@ const DashboardPage: React.FC = () => {
             <Button 
               type="dashed" 
               className="w-full h-24 flex flex-col items-center justify-center"
-              onClick={() => navigate('/documents/create')}
+              onClick={() => navigate('/spaces/create')}
             >
-              <FileTextOutlined className="text-2xl mb-2" />
-              <span>创建文档</span>
+              <FolderOutlined className="text-2xl mb-2" />
+              <span>创建空间</span>
             </Button>
           </Col>
           <Col xs={24} sm={12} md={8} lg={6}>
