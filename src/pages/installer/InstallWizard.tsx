@@ -14,6 +14,8 @@ interface InstallStep {
 
 interface InstallConfig {
   database_url: string;
+  database_username: string;  // 新增：数据库用户名
+  database_password: string;  // 新增：数据库密码
   database_namespace_auth: string;
   database_name_auth: string;
   database_namespace_docs: string;
@@ -41,6 +43,8 @@ export default function InstallWizard() {
   const [installStatus, setInstallStatus] = useState<InstallationStatus | null>(null);
   const [config, setConfig] = useState<InstallConfig>({
     database_url: '127.0.0.1:8686',
+    database_username: 'root',  // 新增：默认用户名
+    database_password: '',       // 新增：需要用户输入
     database_namespace_auth: 'auth',
     database_name_auth: 'main',
     database_namespace_docs: 'docs',
@@ -111,6 +115,14 @@ export default function InstallWizard() {
       case 2: // 数据库配置
         if (!config.database_url.trim()) {
           setError('请输入数据库连接地址');
+          return false;
+        }
+        if (!config.database_username.trim()) {
+          setError('请输入数据库用户名');
+          return false;
+        }
+        if (!config.database_password.trim()) {
+          setError('请输入数据库密码');
           return false;
         }
         if (!config.database_namespace_auth.trim()) {
@@ -184,6 +196,8 @@ export default function InstallWizard() {
     try {
       const installConfig = {
         database_url: config.database_url,
+        database_username: config.database_username,  // 新增
+        database_password: config.database_password,  // 新增
         database_namespace_auth: config.database_namespace_auth,
         database_name_auth: config.database_name_auth,
         database_namespace_docs: config.database_namespace_docs,
@@ -271,6 +285,39 @@ export default function InstallWizard() {
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
+                    数据库用户名 <span className="text-red-500">*</span>
+                  </label>
+                  <input
+                    type="text"
+                    value={config.database_username}
+                    onChange={(e) => handleConfigChange('database_username', e.target.value)}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    placeholder="root"
+                  />
+                  <p className="text-sm text-gray-500 mt-1">
+                    数据库管理员用户名
+                  </p>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    数据库密码 <span className="text-red-500">*</span>
+                  </label>
+                  <input
+                    type="password"
+                    value={config.database_password}
+                    onChange={(e) => handleConfigChange('database_password', e.target.value)}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    placeholder="输入数据库密码"
+                  />
+                  <p className="text-sm text-gray-500 mt-1">
+                    数据库管理员密码
+                  </p>
+                </div>
+              </div>
+              
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
                     Auth系统数据库命名空间
                   </label>
                   <input
@@ -324,8 +371,14 @@ export default function InstallWizard() {
               
               <div className="bg-blue-50 border border-blue-200 rounded-md p-4 mt-4">
                 <p className="text-sm text-blue-700">
-                  <strong>提示：</strong>Auth系统和Docs系统将使用不同的数据库命名空间来隔离数据，确保系统安全性。
+                  <strong>提示：</strong>
                 </p>
+                <ul className="text-sm text-blue-700 list-disc list-inside mt-1">
+                  <li>系统将自动启动 SurrealDB 数据库服务</li>
+                  <li>数据文件将保存在 ./data/rainbow.db</li>
+                  <li>Auth和Docs系统使用不同的命名空间隔离数据</li>
+                  <li>请妥善保管数据库用户名和密码</li>
+                </ul>
               </div>
             </div>
           </div>
@@ -465,6 +518,8 @@ export default function InstallWizard() {
                   <h4 className="font-medium mb-2">配置概览：</h4>
                   <ul className="text-sm space-y-1">
                     <li><strong>数据库地址：</strong> {config.database_url}</li>
+                    <li><strong>数据库用户：</strong> {config.database_username}</li>
+                    <li><strong>数据库密码：</strong> ******</li>
                     <li><strong>Auth数据库：</strong> {config.database_namespace_auth}/{config.database_name_auth}</li>
                     <li><strong>Docs数据库：</strong> {config.database_namespace_docs}/{config.database_name_docs}</li>
                     <li><strong>管理员：</strong> {config.admin_username} ({config.admin_email})</li>
