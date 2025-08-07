@@ -15,7 +15,7 @@ export default defineConfig({
     host: true,
     proxy: {
       '/api': {
-        target: 'http://localhost:8000',  // Kong网关地址
+        target: 'http://129.226.169.63:8000',  // Kong网关地址
         changeOrigin: true,
         secure: false,
         configure: (proxy, _options) => {
