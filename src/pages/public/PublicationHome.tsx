@@ -25,13 +25,13 @@ import dayjs from 'dayjs'
 const { Header, Content, Sider } = Layout
 const { Title, Text } = Typography
 
-interface PublicationHomeParams {
+type PublicationHomeParams = {
   slug: string
   docSlug?: string
 }
 
 const PublicationHome: React.FC = () => {
-  const { slug, docSlug } = useParams<PublicationHomeParams>()
+  const { slug, docSlug } = useParams() as PublicationHomeParams
   
   const [loading, setLoading] = useState(true)
   const [docLoading, setDocLoading] = useState(false)
@@ -77,8 +77,8 @@ const PublicationHome: React.FC = () => {
     try {
       setLoading(true)
       const response = await publicationService.getPublicationTree(slug!)
-      if (response.data?.success) {
-        setDocumentTree(response.data.data || [])
+      if (response?.success) {
+        setDocumentTree(response.data || [])
       }
     } catch (error) {
       message.error('加载文档目录失败')
@@ -91,8 +91,8 @@ const PublicationHome: React.FC = () => {
     try {
       setDocLoading(true)
       const response = await publicationService.getPublicationDocument(slug!, docSlug)
-      if (response.data?.success) {
-        setCurrentDoc(response.data.data)
+      if (response?.success) {
+        setCurrentDoc(response.data)
         // 更新选中的菜单项
         const docNode = findDocumentBySlug(documentTree, docSlug)
         if (docNode) {

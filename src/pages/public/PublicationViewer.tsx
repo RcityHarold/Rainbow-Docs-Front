@@ -44,7 +44,9 @@ interface PublicationViewerParams {
 }
 
 const PublicationViewer: React.FC = () => {
-  const { slug, docSlug } = useParams<PublicationViewerParams>()
+  const params = useParams()
+  const slug = params.slug
+  const docSlug = params.docSlug
   const navigate = useNavigate()
 
   const [loading, setLoading] = useState(true)
@@ -141,7 +143,7 @@ const PublicationViewer: React.FC = () => {
         <span className="tree-node-title">
           {node.title}
           {node.children.length > 0 && (
-            <Tag size="small" className="ml-2">
+            <Tag className="ml-2">
               {node.children.length}
             </Tag>
           )}
@@ -210,7 +212,7 @@ const PublicationViewer: React.FC = () => {
             selectedKeys={docSlug ? [docSlug] : []}
             expandedKeys={expandedKeys}
             onSelect={onTreeSelect}
-            onExpand={setExpandedKeys}
+            onExpand={(keys: any) => setExpandedKeys(keys as string[])}
             showIcon
             className="public-doc-tree"
           />
@@ -252,7 +254,7 @@ const PublicationViewer: React.FC = () => {
           url={`${window.location.origin}/p/${slug}/${docSlug}`}
           type="article"
           publishedTime={currentDocument.created_at}
-          modifiedTime={currentDocument.updated_at}
+          modifiedTime={(currentDocument as any).updated_at}
           section={publication.title}
         />
       )}
@@ -354,7 +356,6 @@ const PublicationViewer: React.FC = () => {
               {/* 文档内容 */}
               <div className="prose prose-lg max-w-none">
                 <ReactMarkdown
-                  className="markdown-body"
                   components={{
                     // 自定义渲染组件
                     h1: ({ children }) => <h1 className="text-3xl font-bold mt-8 mb-4">{children}</h1>,
@@ -369,8 +370,9 @@ const PublicationViewer: React.FC = () => {
                         {children}
                       </blockquote>
                     ),
-                    code: ({ inline, children, ...props }) => 
-                      inline ? (
+                    code: ({ children, ...props }: any) => {
+                      const isInline = true
+                      return isInline ? (
                         <code className="bg-gray-100 px-1 py-0.5 rounded text-sm" {...props}>
                           {children}
                         </code>
@@ -378,7 +380,8 @@ const PublicationViewer: React.FC = () => {
                         <pre className="bg-gray-100 p-4 rounded overflow-x-auto">
                           <code {...props}>{children}</code>
                         </pre>
-                      ),
+                      )
+                    }
                   }}
                 >
                   {currentDocument.content}

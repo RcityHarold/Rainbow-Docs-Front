@@ -150,7 +150,7 @@ const DocumentViewPage: React.FC = () => {
           <FileTextOutlined className="mr-2 text-blue-500" />
           <span className="truncate">{node.title}</span>
           {!node.is_public && (
-            <Tag size="small" color="orange" className="ml-2">
+            <Tag color="orange" className="ml-2">
               草稿
             </Tag>
           )}

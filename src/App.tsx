@@ -35,7 +35,6 @@ import NotificationsPage from '@/pages/notifications'
 import InstallerApp from './InstallerApp'
 
 // 公开文档查看器
-import PublicationViewer from '@/pages/public/PublicationViewer'
 import PublicationHome from '@/pages/public/PublicationHome'
 import PublicationPreview from '@/pages/public/PublicationPreview'
 
@@ -61,13 +60,11 @@ const PublicRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
 }
 
 const App: React.FC = () => {
-  const { refreshUser, isAuthenticated } = useAuthStore()
+  const { refreshUser } = useAuthStore()
   const location = useLocation()
   const [loading, setLoading] = React.useState(true)
   const [needsInstallation, setNeedsInstallation] = React.useState(false)
   
-  // 检查是否是公开文档路径
-  const isPublicPath = location.pathname.startsWith('/p/')
 
   useEffect(() => {
     const initApp = async () => {

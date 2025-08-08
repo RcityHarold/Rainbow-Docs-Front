@@ -62,7 +62,7 @@ const PublicationList: React.FC<PublicationListProps> = ({
       setLoading(true)
       const response = await publicationService.listPublications(spaceId, true)
       // 处理后端返回的数据结构：{success: true, data: [...], message: "..."}
-      const publicationsData = response.data?.data || response.data || []
+      const publicationsData = response?.data || []
       setPublications(Array.isArray(publicationsData) ? publicationsData : [])
     } catch (error: any) {
       message.error('获取发布列表失败')

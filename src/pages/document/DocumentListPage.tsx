@@ -38,7 +38,8 @@ interface RouteParams {
 }
 
 const DocumentListPage: React.FC = () => {
-  const { spaceSlug } = useParams<RouteParams>()
+  const params = useParams()
+  const spaceSlug = params.spaceSlug
   const navigate = useNavigate()
   const { currentSpace, loadSpace, loading: spaceLoading } = useSpaceStore()
   
@@ -63,7 +64,7 @@ const DocumentListPage: React.FC = () => {
     setLoading(true)
     try {
       const response = await documentService.getDocuments(spaceSlug, query)
-      const actualData = response.data.data || response.data
+      const actualData = response?.data || {}
       setDocuments(actualData.documents || [])
       setTotal(actualData.total || 0)
     } catch (error) {
@@ -108,7 +109,7 @@ const DocumentListPage: React.FC = () => {
             {title}
           </span>
           {!record.is_public && (
-            <Tag size="small" color="orange" className="ml-2">
+            <Tag color="orange" className="ml-2">
               私有
             </Tag>
           )}
@@ -140,7 +141,7 @@ const DocumentListPage: React.FC = () => {
     {
       title: '操作',
       key: 'actions',
-      render: (_, record: DocumentListItem) => (
+      render: (_: any, record: DocumentListItem) => (
         <Dropdown
           menu={{
             items: [

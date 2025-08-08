@@ -161,7 +161,7 @@ const DocumentByIdViewPage: React.FC = () => {
           <FileTextOutlined className="mr-2 text-blue-500" />
           <span className="truncate">{node.title}</span>
           {!node.is_public && (
-            <Tag size="small" color="orange" className="ml-2">
+            <Tag color="orange" className="ml-2">
               草稿
             </Tag>
           )}
@@ -458,12 +458,13 @@ const DocumentByIdViewPage: React.FC = () => {
                   >
                   <ReactMarkdown
                     components={{
-                      code({ node, inline, className, children, ...props }) {
+                      code({ node, className, children, ...props }: any) {
                         const match = /language-(\w+)/.exec(className || '')
-                        return !inline && match ? (
+                        const isInline = !match
+                        return !isInline ? (
                           <div className="my-6 rounded-lg overflow-hidden shadow-md">
                             <SyntaxHighlighter
-                              style={tomorrow}
+                              style={tomorrow as any}
                               language={match[1]}
                               PreTag="div"
                               customStyle={{

@@ -31,8 +31,9 @@ export const useSpaceStore = create<SpaceState>()(
         set({ loading: true, error: null })
         try {
           const response = await spaceService.getSpaces(query)
-          // 从响应中获取spaces数组（注意双层嵌套）
-          const spaces = response.data?.data?.spaces || []
+          // 从响应中获取spaces数组
+          const spaceData = response?.data || {}
+          const spaces = (spaceData as any).spaces || []
           set({ 
             spaces: Array.isArray(spaces) ? spaces : [],
             loading: false 
@@ -50,7 +51,7 @@ export const useSpaceStore = create<SpaceState>()(
         try {
           const response = await spaceService.getSpace(slug)
           set({ 
-            currentSpace: response.data.data, // 修复：使用 response.data.data
+            currentSpace: response?.data,
             loading: false 
           })
         } catch (error: any) {
@@ -65,7 +66,7 @@ export const useSpaceStore = create<SpaceState>()(
         set({ loading: true, error: null })
         try {
           const response = await spaceService.createSpace(data)
-          const newSpace = response.data.data // 修复：使用 response.data.data
+          const newSpace = response?.data
           set(state => ({ 
             spaces: [...state.spaces, newSpace],
             loading: false 
@@ -84,7 +85,7 @@ export const useSpaceStore = create<SpaceState>()(
         set({ loading: true, error: null })
         try {
           const response = await spaceService.updateSpace(slug, data)
-          const updatedSpace = response.data.data // 修复：使用 response.data.data
+          const updatedSpace = response?.data
           set(state => ({ 
             spaces: state.spaces.map(space => 
               space.slug === slug ? updatedSpace : space

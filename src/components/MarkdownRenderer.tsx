@@ -39,11 +39,12 @@ const MarkdownRenderer: React.FC<MarkdownRendererProps> = ({ content, className 
         ),
         
         // 代码
-        code({ node, inline, className, children, ...props }) {
+        code({ node, className, children, ...props }: any) {
           const match = /language-(\w+)/.exec(className || '')
-          return !inline && match ? (
+          const isInline = !match
+          return !isInline ? (
             <SyntaxHighlighter
-              style={oneDark}
+              style={oneDark as any}
               language={match[1]}
               PreTag="div"
               className="rounded-md overflow-hidden my-4"

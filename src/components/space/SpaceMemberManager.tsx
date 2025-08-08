@@ -69,8 +69,8 @@ const SpaceMemberManager: React.FC<SpaceMemberManagerProps> = ({
     setLoading(true)
     try {
       const response = await spaceMemberService.getSpaceMembers(spaceSlug)
-      const actualData = response.data.data || response.data
-      setMembers(actualData || [])
+      const actualData = response?.data || []
+      setMembers(actualData)
     } catch (error) {
       message.error('加载成员列表失败')
     } finally {

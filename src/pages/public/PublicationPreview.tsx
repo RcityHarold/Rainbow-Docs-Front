@@ -26,13 +26,13 @@ import dayjs from 'dayjs'
 const { Header, Content, Sider } = Layout
 const { Title, Text } = Typography
 
-interface PublicationPreviewParams {
+type PublicationPreviewParams = {
   publicationId: string
   docSlug?: string
 }
 
 const PublicationPreview: React.FC = () => {
-  const { publicationId, docSlug } = useParams<PublicationPreviewParams>()
+  const { publicationId, docSlug } = useParams() as PublicationPreviewParams
   
   const [loading, setLoading] = useState(true)
   const [docLoading, setDocLoading] = useState(false)
@@ -66,8 +66,8 @@ const PublicationPreview: React.FC = () => {
   const loadPublication = async () => {
     try {
       const response = await publicationService.getPublicationPreview(publicationId!)
-      if (response.data?.success) {
-        setPublication(response.data.data)
+      if (response?.success) {
+        setPublication(response.data)
       }
     } catch (error) {
       message.error('加载发布信息失败')
@@ -78,8 +78,8 @@ const PublicationPreview: React.FC = () => {
     try {
       setLoading(true)
       const response = await publicationService.getPublicationTreePreview(publicationId!)
-      if (response.data?.success) {
-        setDocumentTree(response.data.data || [])
+      if (response?.success) {
+        setDocumentTree(response.data || [])
       }
     } catch (error) {
       message.error('加载文档目录失败')
@@ -92,8 +92,8 @@ const PublicationPreview: React.FC = () => {
     try {
       setDocLoading(true)
       const response = await publicationService.getPublicationDocumentPreview(publicationId!, slug)
-      if (response.data?.success) {
-        setCurrentDoc(response.data.data)
+      if (response?.success) {
+        setCurrentDoc(response.data)
         // 更新选中的菜单项
         const docNode = findDocumentBySlug(documentTree, slug)
         if (docNode) {

@@ -39,12 +39,12 @@ import type { DocumentTreeNode, CreateDocumentRequest } from '@/types'
 const { Content, Sider } = Layout
 const { Title, Text } = Typography
 
-interface SpaceParams {
+type SpaceParams = {
   spaceSlug: string
 }
 
 const SpaceDetailPage: React.FC = () => {
-  const { spaceSlug } = useParams<SpaceParams>()
+  const { spaceSlug } = useParams() as SpaceParams
   const navigate = useNavigate()
   const { currentSpace, loadSpace, loading: spaceLoading } = useSpaceStore()
   const { 
@@ -71,7 +71,7 @@ const SpaceDetailPage: React.FC = () => {
   const loadSpaceStats = async (slug: string) => {
     try {
       const response = await spaceService.getSpaceStats(slug)
-      setSpaceStats(response.data.data) // 修复：使用 response.data.data
+      setSpaceStats(response?.data || {})
     } catch (error) {
       console.error('Failed to load space stats:', error)
     }
@@ -89,7 +89,7 @@ const SpaceDetailPage: React.FC = () => {
             <FileTextOutlined className="mr-2 text-blue-500" />
             {node.title}
             {!node.is_public && (
-              <Tag size="small" color="orange" className="ml-2">
+              <Tag color="orange" className="ml-2">
                 草稿
               </Tag>
             )}

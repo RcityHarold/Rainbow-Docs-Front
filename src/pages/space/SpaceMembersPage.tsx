@@ -19,12 +19,12 @@ import SpaceMemberManager from '@/components/space/SpaceMemberManager'
 const { Content } = Layout
 const { Title } = Typography
 
-interface SpaceParams {
+type SpaceParams = {
   spaceSlug: string
 }
 
 const SpaceMembersPage: React.FC = () => {
-  const { spaceSlug } = useParams<SpaceParams>()
+  const { spaceSlug } = useParams() as SpaceParams
   const navigate = useNavigate()
   const { currentSpace, loadSpace, loading: spaceLoading } = useSpaceStore()
   const { user } = useAuthStore()

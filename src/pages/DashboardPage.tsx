@@ -80,17 +80,17 @@ const DashboardPage: React.FC = () => {
       ])
 
       // 处理空间数据
-      if (spacesResponse.data?.success && spacesResponse.data.data?.spaces) {
-        const spaces = spacesResponse.data.data.spaces
+      if (spacesResponse?.success && spacesResponse.data?.spaces) {
+        const spaces = spacesResponse.data.spaces
         
         // 获取每个空间的统计信息和最近文档
         const spacesWithStats = await Promise.all(
-          spaces.slice(0, 3).map(async (space) => {
+          spaces.slice(0, 3).map(async (space: any) => {
             try {
               const statsRes = await spaceService.getSpaceStats(space.slug)
               return {
                 ...space,
-                stats: statsRes.data?.data
+                stats: statsRes?.data
               } as SpaceWithStats
             } catch (error) {
               console.error(`Failed to load stats for space ${space.slug}:`, error)
@@ -106,12 +106,10 @@ const DashboardPage: React.FC = () => {
         for (const space of spaces.slice(0, 3)) {
           try {
             const docsRes = await documentService.getDocuments(space.slug, { 
-              limit: 5, 
-              sort: 'updated_at',
-              order: 'desc' 
+              limit: 5
             })
-            if (docsRes.data?.success && docsRes.data.data?.documents) {
-              const docsWithSpace = docsRes.data.data.documents.map(doc => ({
+            if (docsRes?.success && docsRes.data?.documents) {
+              const docsWithSpace = docsRes.data.documents.map((doc: any) => ({
                 ...doc,
                 space_name: space.name,
                 space_slug: space.slug
@@ -132,8 +130,8 @@ const DashboardPage: React.FC = () => {
       }
 
       // 处理统计数据
-      if (statsResponse.data?.success && statsResponse.data.data) {
-        const statsData = statsResponse.data.data
+      if (statsResponse?.success && statsResponse.data) {
+        const statsData = statsResponse.data
         setStats({
           totalSpaces: statsData.total_spaces,
           totalDocuments: statsData.total_documents,
@@ -269,7 +267,6 @@ const DashboardPage: React.FC = () => {
                         <span>{doc.title}</span>
                         <Tag 
                           color={doc.is_public ? 'green' : 'orange'}
-                          size="small"
                         >
                           {doc.is_public ? '已发布' : '草稿'}
                         </Tag>
@@ -279,7 +276,7 @@ const DashboardPage: React.FC = () => {
                       <div className="text-gray-500 space-y-1">
                         <div>空间：{(doc as any).space_name || '未知空间'}</div>
                         <div>
-                          {dayjs(doc.updated_at).fromNow()} · {doc.author_name || '未知作者'}
+                          {dayjs(doc.updated_at).fromNow()} · {(doc as any).author_name || '未知作者'}
                         </div>
                       </div>
                     }

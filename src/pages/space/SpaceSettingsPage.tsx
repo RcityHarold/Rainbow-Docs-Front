@@ -28,12 +28,12 @@ const { Content } = Layout
 const { Title } = Typography
 const { TabPane } = Tabs
 
-interface SpaceParams {
+type SpaceParams = {
   spaceSlug: string
 }
 
 const SpaceSettingsPage: React.FC = () => {
-  const { spaceSlug } = useParams<SpaceParams>()
+  const { spaceSlug } = useParams() as SpaceParams
   const navigate = useNavigate()
   const { currentSpace, loadSpace, loading: spaceLoading } = useSpaceStore()
   const { user } = useAuthStore()

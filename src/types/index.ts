@@ -13,6 +13,8 @@ export interface User {
   bio?: string
   location?: string
   website?: string
+  display_name?: string
+  username?: string
 }
 
 export interface LoginCredentials {
@@ -85,6 +87,8 @@ export interface Document {
   updated_at: string
   word_count: number
   reading_time?: number
+  is_published?: boolean
+  author_name?: string
 }
 
 export interface DocumentTreeNode {
@@ -108,6 +112,7 @@ export interface UpdateDocumentRequest {
   title?: string
   content?: string
   is_public?: boolean
+  is_published?: boolean
 }
 
 // 文档查询和响应类型
@@ -410,10 +415,9 @@ export interface AsyncState<T> extends LoadingState {
 }
 
 // 路由类型
-export interface RouteParams {
+export type RouteParams = Record<string, string | undefined> & {
   spaceSlug?: string
   docSlug?: string
-  [key: string]: string | undefined
 }
 
 // 编辑器相关类型

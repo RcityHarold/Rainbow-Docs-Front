@@ -82,7 +82,7 @@ export const useDocStore = create<DocumentState>((set, get) => ({
     try {
       const response = await documentService.getDocumentTree(spaceSlug)
       set({ 
-        documentTree: response.data.data, // 修复：使用 response.data.data
+        documentTree: response?.data || [],
         loading: false 
       })
     } catch (error: any) {
@@ -98,8 +98,8 @@ export const useDocStore = create<DocumentState>((set, get) => ({
     try {
       const response = await documentService.getDocument(spaceSlug, docSlug)
       set({ 
-        currentDocument: response.data.data, // 修复：使用 response.data.data
-        editingContent: response.data.data.content,
+        currentDocument: response?.data,
+        editingContent: response?.data?.content || '',
         hasUnsavedChanges: false,
         loading: false
       })
@@ -116,8 +116,8 @@ export const useDocStore = create<DocumentState>((set, get) => ({
     try {
       const response = await documentService.getDocumentById(docId)
       set({ 
-        currentDocument: response.data.data,
-        editingContent: response.data.data.content,
+        currentDocument: response?.data,
+        editingContent: response?.data?.content || '',
         hasUnsavedChanges: false,
         loading: false
       })
@@ -138,7 +138,7 @@ export const useDocStore = create<DocumentState>((set, get) => ({
       get().loadDocumentTree(spaceSlug)
       
       set({ saving: false })
-      return response.data.data // 修复：使用 response.data.data
+      return response?.data
     } catch (error: any) {
       set({ 
         saving: false,

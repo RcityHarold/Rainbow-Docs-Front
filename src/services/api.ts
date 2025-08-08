@@ -92,29 +92,29 @@ api.interceptors.response.use(
 
 // 通用请求方法
 export const request = {
-  get: <T = any>(url: string, config?: AxiosRequestConfig): Promise<AxiosResponse<T>> =>
-    api.get(url, config),
+  get: <T = any>(url: string, config?: AxiosRequestConfig): Promise<T> =>
+    api.get(url, config).then(res => res.data),
     
-  post: <T = any>(url: string, data?: any, config?: AxiosRequestConfig): Promise<AxiosResponse<T>> =>
-    api.post(url, data, config),
+  post: <T = any>(url: string, data?: any, config?: AxiosRequestConfig): Promise<T> =>
+    api.post(url, data, config).then(res => res.data),
     
-  put: <T = any>(url: string, data?: any, config?: AxiosRequestConfig): Promise<AxiosResponse<T>> =>
-    api.put(url, data, config),
+  put: <T = any>(url: string, data?: any, config?: AxiosRequestConfig): Promise<T> =>
+    api.put(url, data, config).then(res => res.data),
     
-  patch: <T = any>(url: string, data?: any, config?: AxiosRequestConfig): Promise<AxiosResponse<T>> =>
-    api.patch(url, data, config),
+  patch: <T = any>(url: string, data?: any, config?: AxiosRequestConfig): Promise<T> =>
+    api.patch(url, data, config).then(res => res.data),
     
-  delete: <T = any>(url: string, config?: AxiosRequestConfig): Promise<AxiosResponse<T>> =>
-    api.delete(url, config),
+  delete: <T = any>(url: string, config?: AxiosRequestConfig): Promise<T> =>
+    api.delete(url, config).then(res => res.data),
     
-  upload: <T = any>(url: string, formData: FormData, config?: AxiosRequestConfig): Promise<AxiosResponse<T>> =>
+  upload: <T = any>(url: string, formData: FormData, config?: AxiosRequestConfig): Promise<T> =>
     api.post(url, formData, {
       ...config,
       headers: {
         'Content-Type': 'multipart/form-data',
         ...config?.headers,
       },
-    }),
+    }).then(res => res.data),
 }
 
 export default api
