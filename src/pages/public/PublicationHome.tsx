@@ -65,8 +65,8 @@ const PublicationHome: React.FC = () => {
   const loadPublication = async () => {
     try {
       const response = await publicationService.getPublication(slug!)
-      if (response.data?.success) {
-        setPublication(response.data.data)
+      if (response?.success) {
+        setPublication(response.data)
       }
     } catch (error) {
       message.error('加载发布信息失败')
@@ -320,7 +320,7 @@ const PublicationHome: React.FC = () => {
                 {/* 文档信息 */}
                 <div className="mt-12 pt-6 border-t border-gray-200">
                   <Text type="secondary" className="text-sm">
-                    最后更新于 {dayjs(currentDoc.created_at).format('YYYY-MM-DD HH:mm')}
+                    最后更新于 {currentDoc.created_at ? dayjs(currentDoc.created_at).format('YYYY-MM-DD HH:mm') : '未知'}
                   </Text>
                 </div>
               </article>
